@@ -1,7 +1,7 @@
 package fileprocessor;
 
 import com.drew.imaging.ImageProcessingException;
-import filedata.datetime.DateTimeResolver;
+import filedata.datetime.CompositeDateTimeReader;
 import filedata.md5.MD5Reader;
 import utils.FileUtils;
 
@@ -73,7 +73,7 @@ public class FileProcessor {
 
     private static FileInfo extractFileInfo(Path filePath) throws IOException {
         File file = filePath.toFile();
-        DateTimeResolver resolver = new DateTimeResolver();
+        CompositeDateTimeReader resolver = new CompositeDateTimeReader();
         return new FileInfo(
                 resolver.getDateTime(file).orElseThrow(() ->
                         new DateTimeException("Дата не определена")),

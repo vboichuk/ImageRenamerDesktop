@@ -1,20 +1,10 @@
 import fileprocessor.FileProcessor;
 import filedata.datetime.DateTimeReader;
-import filedata.datetime.DateTimeResolver;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.DateTimeException;
-import java.time.format.DateTimeFormatter;
-import java.util.Collection;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import filedata.datetime.CompositeDateTimeReader;
 
 
 public class Main {
-    private static final DateTimeReader resolver = new DateTimeResolver();
+    private static final DateTimeReader resolver = new CompositeDateTimeReader();
 
     public static void main(String[] args) {
 

@@ -8,17 +8,17 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-public class DateTimeResolver implements DateTimeReader {
+public class CompositeDateTimeReader implements DateTimeReader {
     Collection<DateTimeReader> readers;
 
-    public DateTimeResolver() {
+    public CompositeDateTimeReader() {
         this.readers = List.of(
                 new ExifReader(),
                 new FileSystemDateTimeReader()
         );
     }
 
-    public DateTimeResolver(Collection<DateTimeReader> readers) {
+    public CompositeDateTimeReader(Collection<DateTimeReader> readers) {
         if (readers == null || readers.isEmpty()) {
             throw new IllegalArgumentException("Readers collection cannot be null or empty");
         }
