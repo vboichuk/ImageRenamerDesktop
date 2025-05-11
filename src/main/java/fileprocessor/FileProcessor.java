@@ -3,6 +3,7 @@ package fileprocessor;
 import com.drew.imaging.ImageProcessingException;
 import filedata.datetime.CompositeDateTimeReader;
 import filedata.md5.MD5Reader;
+import filerenamer.FileNamingStrategy;
 import utils.FileUtils;
 
 import java.io.File;
@@ -16,16 +17,36 @@ import java.util.Collection;
 
 public class FileProcessor {
 
+    private static CompositeDateTimeReader resolver;
+    private static FileNamingStrategy strategy;
+
+    public FileProcessor() {
+        resolver = new CompositeDateTimeReader();
+
+        strategy = metadata -> {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)");
+            String dateStr = formatter.format(metadata.getDateTime());
+            String md5Prefix = metadata.getMd5().substring(0, 6);
+
+            return String.format("%s-%s.%s",
+                    dateStr,
+                    md5Prefix,
+                    metadata.getExtension().toUpperCase());
+        };
+    }
+
     public void processDirectory(String path) {
 
         try {
-            Path dirPath = validateAndGetPath(path);
+            Path dirPath = FileUtils.getDirectory(path);
             Collection<String> images = FileUtils.ImageUtils.listImageFiles(dirPath);
 
             if (images.isEmpty()) {
                 System.out.println("Изображений не найдено.");
                 return;
             }
+
+            System.out.println("Найдено " + images.size() + " изображений");
             processImages(dirPath, images);
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
@@ -34,28 +55,30 @@ public class FileProcessor {
         }
     }
 
-    private static Path validateAndGetPath(String path) {
-        Path p = Paths.get(path);
-        if (!Files.exists(p)) {
-            throw new IllegalArgumentException("Ошибка: путь '" + path + "' не существует.");
-        }
-        if (!Files.isDirectory(p)) {
-            throw new IllegalArgumentException("Ошибка: '" + path + "' не является папкой.");
-        }
-        return p;
-    }
-
     private static void processImages(Path directoryPath, Collection<String> imageNames) throws IOException {
+        int processed = 0;
+        int skipped = 0;
+        int errors = 0;
+
         for (String imageName : imageNames) {
             try {
-                processSingleImage(directoryPath, imageName);
+                if (processSingleImage(directoryPath, imageName))
+                    processed++;
+                else
+                    skipped++;
             } catch (Exception e) {
+                errors ++;
                 System.err.println("Не удалось обработать файл " + imageName);
             }
         }
+
+        System.out.println();
+        System.out.println(processed + " files processed");
+        System.out.println(skipped + " files skipped");
+        System.out.println(errors + " files failed");
     }
 
-    private static void processSingleImage(Path directoryPath, String imageName)
+    private static boolean processSingleImage(Path directoryPath, String imageName)
             throws IOException, ImageProcessingException {
 
         Path imagePath = directoryPath.resolve(imageName);
@@ -64,33 +87,30 @@ public class FileProcessor {
             throw new ImageProcessingException("Not a regular file", null);
         }
 
-        FileInfo metadata = extractFileInfo(imagePath);
-        Path newPath = generateNewPath(directoryPath, metadata);
+        FileMetadata metadata = extractFileInfo(imagePath);
 
-        FileUtils.safeMove(imagePath, newPath);
+        String newName = strategy.generateName(metadata);
+        Path newPath = directoryPath.resolve(newName);
+
+        boolean nameIsCorrect = imagePath.equals(newPath);
+
+        if (nameIsCorrect)
+            return false;
+
+        System.out.println(imagePath + " -> " + newPath);
+        return FileUtils.safeMove(imagePath, newPath);
     }
 
-
-    private static FileInfo extractFileInfo(Path filePath) throws IOException {
+    private static FileMetadata extractFileInfo(Path filePath) throws IOException {
         File file = filePath.toFile();
-        CompositeDateTimeReader resolver = new CompositeDateTimeReader();
-        return new FileInfo(
+
+        @SuppressWarnings("UnnecessaryLocalVariable")
+        FileMetadata info = new FileMetadata(
                 resolver.getDateTime(file).orElseThrow(() ->
                         new DateTimeException("Дата не определена")),
                 MD5Reader.getMD5(file),
                 FileUtils.ExtensionUtils.getExtension(filePath.getFileName().toString())
         );
-    }
-
-    private static Path generateNewPath(Path dirPath, FileInfo info) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)");
-        String dateStr = formatter.format(info.getDateTime());
-        String md5Prefix = info.getMd5().substring(0, 6);
-        String newName = String.format("%s-%s.%s",
-                dateStr,
-                md5Prefix,
-                info.getExtension().toUpperCase());
-
-        return dirPath.resolve(newName);
+        return info;
     }
 }

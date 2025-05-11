@@ -4,8 +4,6 @@ import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,7 +13,6 @@ import java.util.Optional;
 
 
 public class ExifReader implements DateTimeReader {
-    // private static final Logger logger = LoggerFactory.getLogger(ExifReader.class);
 
     @Override
     public Optional<LocalDateTime> getDateTime(File imageFile) {
@@ -30,7 +27,7 @@ public class ExifReader implements DateTimeReader {
             if (directory != null) {
                 return Optional.ofNullable(directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL))
                         .map(date -> date.toInstant()
-                                .atZone(ZoneId.systemDefault())
+                                .atZone(ZoneId.of("UTC"))
                                 .toLocalDateTime());
             }
             return Optional.empty();

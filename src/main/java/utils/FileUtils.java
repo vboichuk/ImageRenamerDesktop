@@ -6,15 +6,21 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class FileUtils {
     private FileUtils() {} // Запрет создания экземпляров
 
-    public static boolean isDirectory(String path) {
-        return Files.isDirectory(Paths.get(path));
+    public static Path getDirectory(String path) {
+        Path p = Paths.get(path);
+        if (!Files.exists(p)) {
+            throw new IllegalArgumentException("Ошибка: путь '" + path + "' не существует.");
+        }
+        if (!Files.isDirectory(p)) {
+            throw new IllegalArgumentException("Ошибка: '" + path + "' не является папкой.");
+        }
+        return p;
     }
 
     public static Collection<String> listFilesByExtension(Path dir, String extensionPattern) {
@@ -30,14 +36,16 @@ public final class FileUtils {
         }
     }
 
-    public static boolean safeMove(Path source, Path target) {
+    public static boolean safeMove(Path source, Path target) throws IOException {
+        if (source.equals(target))
+            return false;
         try {
             Files.move(source, target);
             return true;
         } catch (IOException e) {
             System.err.printf("Ошибка перемещения %s -> %s: %s%n",
                     source, target, e.getMessage());
-            return false;
+            throw  e;
         }
     }
 
