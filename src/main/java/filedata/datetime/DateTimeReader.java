@@ -1,7 +1,6 @@
 package filedata.datetime;
 
 import java.io.File;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
