@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.DateTimeException;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
@@ -97,7 +96,7 @@ public class FileProcessor {
         if (nameIsCorrect)
             return false;
 
-        System.out.println(imagePath + " -> " + newPath);
+        System.out.println(imagePath.getFileName() + " -> " + newName);
         return FileUtils.safeMove(imagePath, newPath);
     }
 

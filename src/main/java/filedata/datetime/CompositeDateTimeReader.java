@@ -3,6 +3,7 @@ package filedata.datetime;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -14,7 +15,7 @@ public class CompositeDateTimeReader implements DateTimeReader {
     public CompositeDateTimeReader() {
         this.readers = List.of(
                 new ExifReader(),
-                new FileSystemDateTimeReader()
+                new FileSystemDateTimeReader(ZoneId.of("UTC+3"))
         );
     }
 
