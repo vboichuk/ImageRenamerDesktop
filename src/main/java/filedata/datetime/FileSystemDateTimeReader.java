@@ -27,7 +27,6 @@ public class FileSystemDateTimeReader implements DateTimeReader {
             throw new IllegalArgumentException("File cannot be null");
         }
 
-
         try {
             BasicFileAttributes attrs = Files.readAttributes(
                     file.toPath(),

@@ -33,14 +33,9 @@ public class CompositeDateTimeReader implements DateTimeReader {
         }
 
         for (DateTimeReader reader : readers) {
-            try {
-                Optional<LocalDateTime> result = reader.getDateTime(file);
-                if (result.isPresent()) {
-                    return result;
-                }
-            } catch (IOException e) {
-                // Продолжаем попытки с другими ридерами
-                // Логирование ошибки можно добавить при необходимости
+            Optional<LocalDateTime> result = reader.getDateTime(file);
+            if (result.isPresent()) {
+                return result;
             }
         }
         return Optional.empty();
