@@ -38,7 +38,13 @@ public class FileProcessor {
 
         try {
             Path dirPath = FileUtils.getDirectory(path);
-            Collection<String> images = FileUtils.ImageUtils.listImageFiles(dirPath);
+
+            long startTime = System.nanoTime();
+
+            Collection<String> images = FileUtils.ImageUtils.listImageFilesFast1(dirPath);
+
+            long totalTime = System.nanoTime() - startTime;
+            logTime(totalTime / 1_000_000L);
 
             if (images.isEmpty()) {
                 System.out.println("Изображений не найдено.");
@@ -52,6 +58,13 @@ public class FileProcessor {
         } catch (IOException e) {
             System.err.println("Ошибка обработки файлов: " + e.getMessage());
         }
+    }
+
+    private void logTime(long totalTimeMs) {
+        if (totalTimeMs < 1000L)
+            System.out.println("Время выполнения: " + totalTimeMs + " мс");
+        else
+            System.out.println("Время выполнения: " + (totalTimeMs / 1000L)  + " с");
     }
 
     private static void processImages(Path directoryPath, Collection<String> imageNames) throws IOException {
@@ -97,6 +110,7 @@ public class FileProcessor {
             return false;
 
         System.out.println(imagePath.getFileName() + " -> " + newName);
+
         return FileUtils.safeMove(imagePath, newPath);
     }
 

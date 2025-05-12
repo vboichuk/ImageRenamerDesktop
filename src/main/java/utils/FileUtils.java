@@ -1,11 +1,14 @@
 package utils;
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -57,6 +60,58 @@ public final class FileUtils {
          */
         public static Collection<String> listImageFiles(Path dir) {
             return FileUtils.listFilesByExtension(dir, IMAGE_PATTERN);
+        }
+
+        public static Collection<String> listImageFilesFast1(Path dir) {
+            // jpg|jpeg|png|gif|bmp|webp
+
+            List<String> result = new ArrayList<>();
+
+            DirectoryStream.Filter<Path> filter = path -> {
+                if (!Files.isRegularFile(path))
+                    return false;
+                if (Files.isHidden(path))
+                    return false;
+                String lowerName = path.getFileName().toString().toLowerCase();
+                return lowerName.endsWith("jpg") || lowerName.endsWith("jpeg") || lowerName.endsWith("png");
+            };
+
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, filter)) {
+                for (Path entry : stream) {
+                    result.add(entry.getFileName().toString());
+                }
+                return result;
+            } catch (IOException e) {
+                return Collections.emptyList();
+            }
+        }
+
+        public static Collection<String> listImageFilesFast2(Path dir) {
+            // jpg|jpeg|png|gif|bmp|webp
+
+            try (Stream<Path> list = Files.list(dir).parallel()) {
+                return list
+                        .filter(p -> {
+                                    if (!Files.isRegularFile(p)) return false;
+                                    try {
+                                        return !Files.isHidden(p);
+                                    } catch (IOException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                })
+                        .map(Path::getFileName)
+                        .map(Path::toString)
+                        .filter(n -> {
+                            String lowerCase = n.toLowerCase();
+                            return  lowerCase.endsWith(".jpg")  ||
+                                    lowerCase.endsWith(".jpeg") ||
+                                    lowerCase.endsWith(".png");
+                        })
+
+                        .collect(Collectors.toList());
+            } catch (IOException e) {
+                return Collections.emptyList();
+            }
         }
 
         /**

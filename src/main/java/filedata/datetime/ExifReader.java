@@ -33,7 +33,7 @@ public class ExifReader implements DateTimeReader {
             return Optional.empty();
 
         } catch (ImageProcessingException | IOException e) {
-            System.out.println("Failed to read EXIF data from " + imageFile + " " + e.getMessage());
+            // System.out.println("Failed to read EXIF data from " + imageFile + " " + e.getMessage());
             return Optional.empty();
         }
     }
