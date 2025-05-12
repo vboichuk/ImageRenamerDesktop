@@ -44,27 +44,31 @@ public class FileProcessor {
             Collection<String> images = FileUtils.ImageUtils.listImageFilesFast1(dirPath);
 
             long totalTime = System.nanoTime() - startTime;
-            logTime(totalTime / 1_000_000L);
+            logTime("Time for getting images list", totalTime / 1_000_000L);
 
             if (images.isEmpty()) {
-                System.out.println("Изображений не найдено.");
+                System.out.println("No images was found.");
                 return;
             }
 
-            System.out.println("Найдено " + images.size() + " изображений");
+            System.out.println(images.size() + " images was found");
             processImages(dirPath, images);
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
         } catch (IOException e) {
-            System.err.println("Ошибка обработки файлов: " + e.getMessage());
+            System.err.println("Processing failed: " + e.getMessage());
         }
     }
 
-    private void logTime(long totalTimeMs) {
+    @SuppressWarnings("SameParameterValue")
+    private void logTime(String title, long totalTimeMs) {
+        String timeStr;
         if (totalTimeMs < 1000L)
-            System.out.println("Время выполнения: " + totalTimeMs + " мс");
+            timeStr = totalTimeMs + " ms";
         else
-            System.out.println("Время выполнения: " + (totalTimeMs / 1000L)  + " с");
+            timeStr = (totalTimeMs / 1000L)  + " s";
+
+        System.out.format("%s: %s\n", title, timeStr);
     }
 
     private static void processImages(Path directoryPath, Collection<String> imageNames) throws IOException {
@@ -109,9 +113,13 @@ public class FileProcessor {
         if (nameIsCorrect)
             return false;
 
-        System.out.println(imagePath.getFileName() + " -> " + newName);
-
-        return FileUtils.safeMove(imagePath, newPath);
+        if (directoryPath.getFileName().toString().startsWith("test_")) {
+            System.out.println(imagePath.getFileName() + " => " + newName);
+            return FileUtils.safeMove(imagePath, newPath);
+        } else {
+            System.out.println(imagePath.getFileName() + " -> " + newName);
+            return true;
+        }
     }
 
     private static FileMetadata extractFileInfo(Path filePath) throws IOException {
