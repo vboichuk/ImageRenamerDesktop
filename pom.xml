@@ -26,6 +26,12 @@
             <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency> <!-- edit exif -->
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-imaging</artifactId>
+            <version>1.0-alpha3</version> <!-- Проверьте актуальную версию -->
+        </dependency>
     </dependencies>
 
     <build>
