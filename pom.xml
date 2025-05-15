@@ -32,6 +32,12 @@
             <artifactId>commons-imaging</artifactId>
             <version>1.0-alpha3</version> <!-- Проверьте актуальную версию -->
         </dependency>
+
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>4.7.5</version> <!-- Проверьте актуальную версию -->
+        </dependency>
     </dependencies>
 
     <build>
