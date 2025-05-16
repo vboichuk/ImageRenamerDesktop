@@ -1,5 +1,6 @@
 package exifEditor;
 
+import exception.NoExifDataException;
 import org.apache.commons.imaging.ImageReadException;
 import org.apache.commons.imaging.ImageWriteException;
 import org.apache.commons.imaging.Imaging;
@@ -21,13 +22,12 @@ import java.time.format.DateTimeFormatter;
 
 public class ExifEditor {
     public static void updateExifDateTimeOriginal(File jpegFile, LocalDateTime newDateTime)
-            throws IOException, ImageReadException, ImageWriteException {
+            throws IOException, ImageReadException, ImageWriteException, NoExifDataException {
 
         // Получаем текущие EXIF-данные
         TiffImageMetadata exifMetadata = getExifMetadata(jpegFile);
         if (exifMetadata == null) {
-            System.out.println("Файл не содержит EXIF-данных.");
-            return;
+            throw new NoExifDataException();
         }
 
         // Создаём TiffOutputSet для записи
@@ -44,7 +44,7 @@ public class ExifEditor {
 
         // Записываем изменения во временный файл
         File tempFile = File.createTempFile("temp", ".jpg");
-        System.out.println("tempFile = " + tempFile.getName());
+        // System.out.println("tempFile = " + tempFile.getName());
         try (FileOutputStream fos = new FileOutputStream(tempFile);
              BufferedOutputStream bos = new BufferedOutputStream(fos)) {
             new ExifRewriter().updateExifMetadataLossless(jpegFile, bos, outputSet);

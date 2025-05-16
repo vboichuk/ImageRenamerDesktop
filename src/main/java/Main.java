@@ -3,11 +3,18 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
+/*
+Список проблем
+1. Добавить нормальный логгер
+2. Если в файле нет никакой exif-информации - не удастся добавить DateTimeOriginal
+3. Сначала просчет - затем переименование
+ */
+
 
 @CommandLine.Command(
         name = "FileRenamerDesktop",
         mixinStandardHelpOptions = true,
-        version = "1.0",
+        version = "1.1",
         description = "Tool for renaming files and editing EXIF data"
 )
 public class Main {

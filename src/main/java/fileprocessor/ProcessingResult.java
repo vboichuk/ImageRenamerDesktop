@@ -8,14 +8,9 @@ public class ProcessingResult {
 
     @Override
     public String toString() {
-//        System.out.println(processed + " files processed");
-//        System.out.println(skipped + " files skipped");
-//        System.out.println(errors + " files failed");
-        return "ProcessingResult{" +
-                "processed=" + processed +
-                ", skipped=" + skipped +
-                ", failed=" + failed +
-                '}';
+        return String.format(
+                "\nProcessing result:\nProcessed: %d\nSkipped: %d\nFailed: %d",
+                processed, skipped, failed);
     }
 
     public void incProcessed() {

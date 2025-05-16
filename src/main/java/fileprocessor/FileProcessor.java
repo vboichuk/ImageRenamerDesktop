@@ -20,11 +20,10 @@ public class FileProcessor {
 
     private final CompositeDateTimeReader dateTimeReader;
     private final FileNamingStrategy strategy;
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)");;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)");
 
     public FileProcessor() {
-        this.dateTimeReader = new CompositeDateTimeReader();
-        this.strategy = metadata -> {
+        this(metadata -> {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)");
             String dateStr = formatter.format(metadata.getDateTime());
             String md5Prefix = metadata.getMd5().substring(0, 6);
@@ -33,7 +32,7 @@ public class FileProcessor {
                     dateStr,
                     md5Prefix,
                     metadata.getExtension().toUpperCase());
-        };
+        });
     }
 
     public FileProcessor(FileNamingStrategy strategy) {
@@ -53,11 +52,9 @@ public class FileProcessor {
                 return;
             }
 
-            processRenameImages(dirPath, images);
-        } catch (IllegalArgumentException e) {
-            System.err.println(e.getMessage());
-        } catch (IOException e) {
-            System.err.println("Processing failed: " + e.getMessage());
+            renameFilesInDirectory(dirPath, images);
+        } catch (IllegalArgumentException | IOException e) {
+            logError(e.getMessage(), e);
         }
     }
 
@@ -67,17 +64,12 @@ public class FileProcessor {
             System.out.println("path = " + dirPath);
 
             Collection<String> images = getImageFiles(dirPath);
-
             if (images.isEmpty()) {
                 return;
             }
-
-            processEditExifImages(dirPath, images);
-        } catch (IllegalArgumentException e) {
-            System.err.println(e.getMessage());
-        } catch (IOException e) {
-            System.err.println("Processing failed: " + e.getMessage());
-            throw new RuntimeException(e);
+            updateExifForFilesInDirectory(dirPath, images);
+        } catch (IllegalArgumentException | IOException e) {
+            logError(e.getMessage(), e);
         }
     }
 
@@ -98,7 +90,7 @@ public class FileProcessor {
     }
 
     @SuppressWarnings("SameParameterValue")
-    private void logTime(String title, long totalTimeMs) {
+    protected void logTime(String title, long totalTimeMs) {
         String timeStr;
         if (totalTimeMs < 1000L)
             timeStr = totalTimeMs + " ms";
@@ -108,8 +100,15 @@ public class FileProcessor {
         System.out.format("%s: %s\n", title, timeStr);
     }
 
+    protected void logError(String message, Exception e) {
+        System.err.println(message);
+        if (e != null) {
+            e.printStackTrace();
+        }
+    }
 
-    private void processRenameImages(Path directoryPath, Collection<String> imageNames) throws IOException {
+
+    private void renameFilesInDirectory(Path directoryPath, Collection<String> imageNames) throws IOException {
         ProcessingResult result = new ProcessingResult();
 
         for (String imageName : imageNames) {
@@ -120,13 +119,13 @@ public class FileProcessor {
                     result.incSkipped();
             } catch (Exception e) {
                 result.incFailed();
-                System.err.println("Failed processing of file " + imageName);
+                logError("Failed processing of file " + imageName, e);
             }
         }
         System.out.println(result);
     }
 
-    private void processEditExifImages(Path directoryPath, Collection<String> imageNames) {
+    private void updateExifForFilesInDirectory(Path directoryPath, Collection<String> imageNames) {
         ProcessingResult result = new ProcessingResult();
 
         for (String imageName : imageNames) {
@@ -147,7 +146,7 @@ public class FileProcessor {
                 System.err.println(e.getMessage());
             } catch (Exception e) {
                 result.incFailed();
-                System.err.println("Не удалось обработать файл " + imageName);
+                logError("Failed processing of file " + imageName, e);
             }
         }
         System.out.println(result);
@@ -180,14 +179,12 @@ public class FileProcessor {
     private FileMetadata extractFileInfo(Path filePath) throws IOException {
         File file = filePath.toFile();
 
-        @SuppressWarnings("UnnecessaryLocalVariable")
-        FileMetadata info = new FileMetadata(
+        return new FileMetadata(
                 dateTimeReader.getDateTime(file).orElseThrow(() ->
-                        new DateTimeException("Дата не определена")),
+                        new DateTimeException("Date undefined")),
                 MD5Reader.getMD5(file),
                 FileUtils.ExtensionUtils.getExtension(filePath.getFileName().toString())
         );
-        return info;
     }
 }
 
