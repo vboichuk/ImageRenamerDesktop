@@ -1,6 +1,7 @@
 package fileprocessor;
 
 import com.drew.imaging.ImageProcessingException;
+import exifEditor.ExifEditor;
 import filedata.datetime.CompositeDateTimeReader;
 import filedata.md5.MD5Reader;
 import filerenamer.FileNamingStrategy;
@@ -11,18 +12,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.DateTimeException;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 
 public class FileProcessor {
 
-    private static CompositeDateTimeReader resolver;
+    private final CompositeDateTimeReader dateTimeReader;
     private final FileNamingStrategy strategy;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)");;
 
     public FileProcessor() {
-        resolver = new CompositeDateTimeReader();
-
-        strategy = metadata -> {
+        this.dateTimeReader = new CompositeDateTimeReader();
+        this.strategy = metadata -> {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)");
             String dateStr = formatter.format(metadata.getDateTime());
             String md5Prefix = metadata.getMd5().substring(0, 6);
@@ -35,33 +37,64 @@ public class FileProcessor {
     }
 
     public FileProcessor(FileNamingStrategy strategy) {
+        this.dateTimeReader = new CompositeDateTimeReader();
         this.strategy = strategy;
     }
 
-    public void processDirectory(String path) {
+
+    public void rename(String directory) {
 
         try {
-            Path dirPath = FileUtils.getDirectory(path);
+            Path dirPath = FileUtils.getDirectory(directory);
+            System.out.println("path = " + dirPath);
 
-            long startTime = System.nanoTime();
-
-            Collection<String> images = FileUtils.ImageUtils.listImageFilesFast1(dirPath);
-
-            long totalTime = System.nanoTime() - startTime;
-            logTime("Time for getting images list", totalTime / 1_000_000L);
-
+            Collection<String> images = getImageFiles(dirPath);
             if (images.isEmpty()) {
-                System.out.println("No images was found.");
                 return;
             }
 
-            System.out.println(images.size() + " images was found");
-            processImages(dirPath, images);
+            processRenameImages(dirPath, images);
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
         } catch (IOException e) {
             System.err.println("Processing failed: " + e.getMessage());
         }
+    }
+
+    public void editExif(String directory) {
+        try {
+            Path dirPath = FileUtils.getDirectory(directory);
+            System.out.println("path = " + dirPath);
+
+            Collection<String> images = getImageFiles(dirPath);
+
+            if (images.isEmpty()) {
+                return;
+            }
+
+            processEditExifImages(dirPath, images);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+        } catch (IOException e) {
+            System.err.println("Processing failed: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    private Collection<String> getImageFiles(Path dirPath) throws IOException {
+
+        long startTime = System.nanoTime();
+        Collection<String> images = FileUtils.ImageUtils.listImageFilesFast(dirPath);
+        logTime("Time for getting images list", (System.nanoTime() - startTime) / 1_000_000L);
+
+        if (images.isEmpty()) {
+            System.out.println("No images was found.");
+        } else {
+            System.out.println(images.size() + " images was found");
+        }
+
+        return images;
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -75,28 +108,51 @@ public class FileProcessor {
         System.out.format("%s: %s\n", title, timeStr);
     }
 
-    private void processImages(Path directoryPath, Collection<String> imageNames) throws IOException {
-        int processed = 0;
-        int skipped = 0;
-        int errors = 0;
+
+    private void processRenameImages(Path directoryPath, Collection<String> imageNames) throws IOException {
+        ProcessingResult result = new ProcessingResult();
 
         for (String imageName : imageNames) {
             try {
                 if (processSingleImage(directoryPath, imageName))
-                    processed++;
+                    result.incProcessed();
                 else
-                    skipped++;
+                    result.incSkipped();
             } catch (Exception e) {
-                errors ++;
+                result.incFailed();
+                System.err.println("Failed processing of file " + imageName);
+            }
+        }
+        System.out.println(result);
+    }
+
+    private void processEditExifImages(Path directoryPath, Collection<String> imageNames) {
+        ProcessingResult result = new ProcessingResult();
+
+        for (String imageName : imageNames) {
+            try {
+                Path imagePath = directoryPath.resolve(imageName);
+                if (imageName.length() < 18) {
+                    throw new IllegalArgumentException("File name too short: " + imageName);
+                }
+                String substring = imageName.substring(0, 18);
+
+                LocalDateTime dateTime = LocalDateTime.parse(substring, formatter);
+                System.out.println(imageName + " -> " + dateTime);
+                ExifEditor.updateExifDateTimeOriginal(imagePath.toFile(), dateTime);
+                result.incProcessed();
+            }
+            catch (StringIndexOutOfBoundsException e) {
+                result.incFailed();
+                System.err.println(e.getMessage());
+            } catch (Exception e) {
+                result.incFailed();
                 System.err.println("Не удалось обработать файл " + imageName);
             }
         }
-
-        System.out.println();
-        System.out.println(processed + " files processed");
-        System.out.println(skipped + " files skipped");
-        System.out.println(errors + " files failed");
+        System.out.println(result);
     }
+
 
     private boolean processSingleImage(Path directoryPath, String imageName)
             throws IOException, ImageProcessingException {
@@ -121,12 +177,12 @@ public class FileProcessor {
         return FileUtils.safeMove(imagePath, newPath);
     }
 
-    private static FileMetadata extractFileInfo(Path filePath) throws IOException {
+    private FileMetadata extractFileInfo(Path filePath) throws IOException {
         File file = filePath.toFile();
 
         @SuppressWarnings("UnnecessaryLocalVariable")
         FileMetadata info = new FileMetadata(
-                resolver.getDateTime(file).orElseThrow(() ->
+                dateTimeReader.getDateTime(file).orElseThrow(() ->
                         new DateTimeException("Дата не определена")),
                 MD5Reader.getMD5(file),
                 FileUtils.ExtensionUtils.getExtension(filePath.getFileName().toString())
@@ -134,3 +190,4 @@ public class FileProcessor {
         return info;
     }
 }
+

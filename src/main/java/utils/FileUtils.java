@@ -16,14 +16,15 @@ public final class FileUtils {
     private FileUtils() {} // Запрет создания экземпляров
 
     public static Path getDirectory(String path) {
-        Path p = Paths.get(path);
+        Path p = Paths.get(path).toAbsolutePath();
+
         if (!Files.exists(p)) {
-            throw new IllegalArgumentException("Ошибка: путь '" + path + "' не существует.");
+            throw new IllegalArgumentException("Error: path '" + path + "' does not exists");
         }
         if (!Files.isDirectory(p)) {
-            throw new IllegalArgumentException("Ошибка: '" + path + "' не является папкой.");
+            throw new IllegalArgumentException("Error: path '" + path + "' is not a folder");
         }
-        return p;
+        return p.normalize();
     }
 
     public static Collection<String> listFilesByExtension(Path dir, String extensionPattern) {
@@ -62,7 +63,7 @@ public final class FileUtils {
             return FileUtils.listFilesByExtension(dir, IMAGE_PATTERN);
         }
 
-        public static Collection<String> listImageFilesFast1(Path dir) {
+        public static Collection<String> listImageFilesFast(Path dir) {
             // jpg|jpeg|png|gif|bmp|webp
 
             List<String> result = new ArrayList<>();
@@ -120,7 +121,6 @@ public final class FileUtils {
         public static boolean isImageFile(Path file) {
             return file.getFileName().toString().matches(IMAGE_PATTERN);
         }
-
     }
 
     public static final class PathUtils {
