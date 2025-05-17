@@ -5,6 +5,8 @@ import exifEditor.ExifEditor;
 import filedata.datetime.CompositeDateTimeReader;
 import filedata.md5.MD5Reader;
 import filerenamer.FileNamingStrategy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.FileUtils;
 
 import java.io.File;
@@ -17,6 +19,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 
 public class FileProcessor {
+
+    private static final Logger logger = LoggerFactory.getLogger(FileProcessor.class);
 
     private final CompositeDateTimeReader dateTimeReader;
     private final FileNamingStrategy strategy;
@@ -45,7 +49,7 @@ public class FileProcessor {
 
         try {
             Path dirPath = FileUtils.getDirectory(directory);
-            System.out.println("path = " + dirPath);
+            logger.debug("Processing directory: {}", dirPath);
 
             Collection<String> images = getImageFiles(dirPath);
             if (images.isEmpty()) {
@@ -61,7 +65,7 @@ public class FileProcessor {
     public void editExif(String directory) {
         try {
             Path dirPath = FileUtils.getDirectory(directory);
-            System.out.println("path = " + dirPath);
+            logger.debug("Processing directory: {}", dirPath);
 
             Collection<String> images = getImageFiles(dirPath);
             if (images.isEmpty()) {
@@ -81,9 +85,9 @@ public class FileProcessor {
         logTime("Time for getting images list", (System.nanoTime() - startTime) / 1_000_000L);
 
         if (images.isEmpty()) {
-            System.out.println("No images was found.");
+            logger.info("No images found in directory: {}", dirPath);
         } else {
-            System.out.println(images.size() + " images was found");
+            logger.info("Found {} images in directory: {}", images.size(), dirPath);
         }
 
         return images;
@@ -97,14 +101,11 @@ public class FileProcessor {
         else
             timeStr = (totalTimeMs / 1000L)  + " s";
 
-        System.out.format("%s: %s\n", title, timeStr);
+        logger.debug(title + ": " + timeStr);
     }
 
     protected void logError(String message, Exception e) {
-        System.err.println(message);
-        if (e != null) {
-            e.printStackTrace();
-        }
+        logger.error(message, e);
     }
 
 
@@ -122,7 +123,7 @@ public class FileProcessor {
                 logError("Failed processing of file " + imageName, e);
             }
         }
-        System.out.println(result);
+        logger.info(result.toString());
     }
 
     private void updateExifForFilesInDirectory(Path directoryPath, Collection<String> imageNames) {
@@ -137,19 +138,19 @@ public class FileProcessor {
                 String substring = imageName.substring(0, 18);
 
                 LocalDateTime dateTime = LocalDateTime.parse(substring, formatter);
-                System.out.println(imageName + " -> " + dateTime);
+                logger.debug("{} -> {}\n", imageName, dateTime);
                 ExifEditor.updateExifDateTimeOriginal(imagePath.toFile(), dateTime);
                 result.incProcessed();
             }
             catch (StringIndexOutOfBoundsException e) {
                 result.incFailed();
-                System.err.println(e.getMessage());
+                logError(e.getMessage(), e);
             } catch (Exception e) {
                 result.incFailed();
                 logError("Failed processing of file " + imageName, e);
             }
         }
-        System.out.println(result);
+        logger.info(result.toString());
     }
 
 
@@ -172,7 +173,7 @@ public class FileProcessor {
         if (namesMatch)
             return false;
 
-        System.out.println(imagePath.getFileName() + " => " + newName);
+        logger.debug(imagePath.getFileName() + " => " + newName);
         return FileUtils.safeMove(imagePath, newPath);
     }
 
