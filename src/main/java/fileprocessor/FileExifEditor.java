@@ -29,7 +29,7 @@ public class FileExifEditor extends FileProcessor {
     }
 
     private void updateExifForFilesInDirectory(Path directoryPath, Collection<String> imageNames) {
-        ProcessingResult result = new ProcessingResult();
+        ProcessingResult result = new ProcessingResult("Update Exif");
 
         for (String imageName : imageNames) {
             try {

@@ -7,6 +7,7 @@ import utils.FileUtils;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Scanner;
 
 /**
  * Базовый класс для обработки файлов с логированием
@@ -17,6 +18,7 @@ public abstract class FileProcessor {
 
     /**
      * Получает список изображений в директории
+     *
      * @param dirPath путь к директории
      * @return коллекция имен файлов
      * @throws IOException если возникла ошибка чтения
@@ -42,5 +44,13 @@ public abstract class FileProcessor {
 
     protected void logDuration(String operationName, long durationMs) {
         logger.debug("{} execution time: {} ms", operationName, durationMs);
+    }
+
+    protected boolean confirmOperation(String prompt) {
+        String characters = "y/Y/+";
+        Scanner scanner = new Scanner(System.in);
+        System.out.printf("%s (%s):\n", prompt, characters);
+        String input = scanner.nextLine().trim().toLowerCase();
+        return input.equals("y") || input.equals("+");
     }
 }

@@ -11,10 +11,13 @@ import utils.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.time.DateTimeException;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Optional;
 
 public class FileRenamer extends FileProcessor {
 
@@ -50,31 +53,79 @@ public class FileRenamer extends FileProcessor {
                 return;
             }
 
-            renameFilesInDirectory(dirPath, images);
+            calculateNames(dirPath, images);
         } catch (IllegalArgumentException | IOException e) {
             logError(e.getMessage(), e);
         }
     }
 
 
-    private void renameFilesInDirectory(Path directoryPath, Collection<String> imageNames) throws IOException {
-        ProcessingResult result = new ProcessingResult();
+    private void calculateNames(Path directoryPath, Collection<String> imageNames) throws IOException {
+        ProcessingResult result = new ProcessingResult("Calculate names");
+        HashMap<String, String> namesMap = new HashMap<>();
 
         for (String imageName : imageNames) {
+
             try {
-                if (processSingleImage(directoryPath, imageName))
+                Optional<String> newName = calculateNameForFile(directoryPath, imageName);
+                if (newName.isPresent()) {
+                    namesMap.put(imageName, newName.get());
+                    result.incProcessed();
+                }
+                else {
+                    logger.debug("✓ {}", imageName);
+                    result.incSkipped();
+                }
+            } catch (Exception e) {
+                result.incFailed();
+                // ⚠
+                logError("Failed processing of file " + imageName, e);
+            }
+
+
+        }
+        logger.info(result.toString());
+
+        if (namesMap.isEmpty()) {
+            logger.info("No files need renaming");
+            return;
+        }
+
+        logger.info("Files to rename:");
+        namesMap.forEach((oldName, newName) -> logger.info("{} → {}", oldName, newName));
+
+        if (confirmOperation("Confirm rename?")) {
+            renameFilesInDirectory(directoryPath, namesMap);
+        } else {
+            logger.info("Operation canceled by user.");
+        }
+    }
+
+    private void renameFilesInDirectory(Path directoryPath, HashMap<String, String> namesMap) {
+        ProcessingResult result = new ProcessingResult("Rename files");
+        for (String name : namesMap.keySet()) {
+            try {
+                Path curPath = directoryPath.resolve(name);
+                Path newPath = directoryPath.resolve(namesMap.get(name));
+                boolean ok = FileUtils.safeMove(curPath, newPath);
+                if (ok)
                     result.incProcessed();
                 else
                     result.incSkipped();
-            } catch (Exception e) {
+            } catch (NoSuchFileException e) {
                 result.incFailed();
-                logError("Failed processing of file " + imageName, e);
+                logError("No such file", e);
+            } catch (IOException e) {
+                result.incFailed();
+                logError(e.getMessage(), e);
             }
         }
+
         logger.info(result.toString());
     }
 
-    private boolean processSingleImage(Path directoryPath, String imageName)
+
+    private Optional<String> calculateNameForFile(Path directoryPath, String imageName)
             throws IOException, ImageProcessingException {
 
         Path imagePath = directoryPath.resolve(imageName);
@@ -91,10 +142,9 @@ public class FileRenamer extends FileProcessor {
         boolean namesMatch = imagePath.equals(newPath);
 
         if (namesMatch)
-            return false;
+            return Optional.empty();
 
-        logger.debug(imagePath.getFileName() + " => " + newName);
-        return FileUtils.safeMove(imagePath, newPath);
+        return Optional.of(newName);
     }
 
     private FileMetadata extractFileInfo(Path filePath) throws IOException {

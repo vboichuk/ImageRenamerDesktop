@@ -1,10 +1,10 @@
 package utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class FileUtils {
+    private static Logger logger = LoggerFactory.getLogger(FileUtils.class);
+
     private FileUtils() {} // Запрет создания экземпляров
 
     public static Path getDirectory(String path) {
@@ -40,16 +42,16 @@ public final class FileUtils {
         }
     }
 
+    // REPLACE_EXISTING
     public static boolean safeMove(Path source, Path target) throws IOException {
         if (source.equals(target))
             return false;
         try {
-            Files.move(source, target);
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
             return true;
         } catch (IOException e) {
-            System.err.printf("Ошибка перемещения %s -> %s: %s%n",
-                    source, target, e.getMessage());
-            throw  e;
+            logger.error("Moving failed {} -> {}", source, target);
+            throw e;
         }
     }
 
