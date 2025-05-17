@@ -1,13 +1,14 @@
-import fileprocessor.FileProcessor;
+import fileprocessor.FileExifEditor;
+import filerenamer.FileRenamer;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 /*
 Список проблем
-1. Добавить нормальный логгер
-2. Если в файле нет никакой exif-информации - не удастся добавить DateTimeOriginal
-3. Сначала просчет - затем переименование
+1. Если в файле нет никакой exif-информации - не удастся добавить DateTimeOriginal
+2. Сначала просчет - затем переименование
+3. Добавить возможность задавать формат имени с командной строки
  */
 
 
@@ -29,7 +30,7 @@ public class Main {
     @Command(description = "Rename files in the specified directory")
     public int rename() {
         try {
-            new FileProcessor().rename(directory);
+            new FileRenamer().rename(directory);
             return 0;
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
@@ -40,7 +41,7 @@ public class Main {
     @Command(description = "Edit EXIF data of files in the specified directory")
     public int editexif() {
         try {
-            new FileProcessor().editExif(directory);
+            new FileExifEditor().editExif(directory);
             return 0;
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
