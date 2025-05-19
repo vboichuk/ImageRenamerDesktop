@@ -3,6 +3,7 @@ package utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ public final class FileUtils {
     private FileUtils() {} // Запрет создания экземпляров
 
     public static Path getDirectory(String path) {
-        Path p = Paths.get(path).toAbsolutePath();
+        Path p = Paths.get(path).toAbsolutePath().normalize();
 
         if (!Files.exists(p)) {
             throw new IllegalArgumentException("Error: path '" + path + "' does not exists");
@@ -46,13 +47,15 @@ public final class FileUtils {
     public static boolean safeMove(Path source, Path target) throws IOException {
         if (source.equals(target))
             return false;
-        try {
-            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
-            return true;
-        } catch (IOException e) {
-            logger.error("Moving failed {} -> {}", source, target);
-            throw e;
+
+        File parentDir = target.toAbsolutePath().getParent().toFile();
+        logger.debug("parent: {}", parentDir.getName());
+        if (!parentDir.exists()) {
+            parentDir.mkdir();
         }
+
+        Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+        return true;
     }
 
     public static class ImageUtils {

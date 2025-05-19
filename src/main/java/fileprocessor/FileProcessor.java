@@ -30,9 +30,9 @@ public abstract class FileProcessor {
         logDuration("Getting images list", (System.nanoTime() - startTime) / 1_000_000L);
 
         if (images.isEmpty()) {
-            logger.info("No images found in directory: {}", dirPath);
+            logger.info("No images found in directory");
         } else {
-            logger.info("Found {} images in directory: {}", images.size(), dirPath);
+            logger.info("Found {} images", images.size());
         }
 
         return images;

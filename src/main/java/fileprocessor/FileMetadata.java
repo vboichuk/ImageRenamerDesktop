@@ -34,19 +34,23 @@ public class FileMetadata {
         return cameraModel;
     }
 
-    public void setCameraModel(String cameraModel) {
+    public FileMetadata setCameraModel(String cameraModel) {
         this.cameraModel = cameraModel;
+        return this;
     }
 
-    public void setDateTime(LocalDateTime dateTime) {
+    public FileMetadata setDateTime(LocalDateTime dateTime) {
         this.dateTime = dateTime;
+        return this;
     }
 
-    public void setMd5(String md5) {
+    public FileMetadata setMd5(String md5) {
         this.md5 = md5;
+        return this;
     }
 
-    public void setExtension(String extension) {
+    public FileMetadata setExtension(String extension) {
         this.extension = extension;
+        return this;
     }
 }

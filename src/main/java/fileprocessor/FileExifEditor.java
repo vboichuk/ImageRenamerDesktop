@@ -1,5 +1,6 @@
 package fileprocessor;
 
+import exception.NoExifDataException;
 import exifEditor.ExifEditor;
 import utils.FileUtils;
 
@@ -7,11 +8,12 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Collection;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FileExifEditor extends FileProcessor {
-
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)");
 
     public void editExif(String directory) {
         try {
@@ -34,22 +36,28 @@ public class FileExifEditor extends FileProcessor {
         for (String imageName : imageNames) {
             try {
                 Path imagePath = directoryPath.resolve(imageName);
-                if (imageName.length() < 18) {
-                    throw new IllegalArgumentException("File name too short: " + imageName);
-                }
-                String substring = imageName.substring(0, 18);
 
-                LocalDateTime dateTime = LocalDateTime.parse(substring, formatter);
-                logger.debug("{} -> {}\n", imageName, dateTime);
+                Pattern pattern = Pattern.compile("(\\d{4}\\.\\d{2}\\.\\d{2}_\\(\\d{2}-\\d{2}\\))");
+                Matcher matcher = pattern.matcher(imageName);
+
+                if (!matcher.find()) {
+                    throw new DateTimeParseException("DateTimeParseException", imageName, 1);
+                }
+
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)");
+                LocalDateTime dateTime = LocalDateTime.parse(matcher.group(1), formatter);
+
                 ExifEditor.updateExifDateTimeOriginal(imagePath.toFile(), dateTime);
+                logger.info("{} → {}", imageName, dateTime);
                 result.incProcessed();
             }
-            catch (StringIndexOutOfBoundsException e) {
+            catch (NoExifDataException | DateTimeParseException e) {
                 result.incFailed();
-                logError(e.getMessage(), e);
-            } catch (Exception e) {
+                logger.warn("⚠ {} : {}", imageName, e.getMessage());
+            }
+            catch (Exception e) {
                 result.incFailed();
-                logError("Failed processing of file " + imageName, e);
+                logError("⚠ Failed processing of file " + imageName, e);
             }
         }
         logger.info(result.toString());

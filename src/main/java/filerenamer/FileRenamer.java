@@ -13,13 +13,12 @@ import utils.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.time.DateTimeException;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Optional;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class FileRenamer extends FileProcessor {
 
@@ -27,24 +26,7 @@ public class FileRenamer extends FileProcessor {
     private final FileNamingStrategy strategy;
 
     public FileRenamer() {
-        this(metadata -> {
-            if (metadata.getDateTime() == null)
-                throw new DateTimeException("");
-
-//            if (metadata.getCameraModel() == null)
-//                throw new CameraModelException("");
-
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)");
-            String dateStr = formatter.format(metadata.getDateTime());
-            String md5Prefix = metadata.getMd5().substring(0, 6);
-            String camera = metadata.getCameraModel();
-
-            return String.format("%s-%s.%s",
-                    // camera,
-                    dateStr,
-                    md5Prefix,
-                    metadata.getExtension().toUpperCase());
-        });
+        this(createDefaultStrategy());
     }
 
     public FileRenamer(FileNamingStrategy strategy) {
@@ -56,6 +38,7 @@ public class FileRenamer extends FileProcessor {
 
         try {
             Path dirPath = FileUtils.getDirectory(directory);
+
             logger.debug("Processing directory: {}", dirPath);
 
             Collection<String> images = getImageFiles(dirPath);
@@ -63,87 +46,81 @@ public class FileRenamer extends FileProcessor {
                 return;
             }
 
-            calculateNames(dirPath, images);
+            processImages(dirPath, images);
         } catch (IllegalArgumentException | IOException e) {
             logError(e.getMessage(), e);
         }
     }
 
 
-    private void calculateNames(Path directoryPath, Collection<String> imageNames) throws IOException {
-        ProcessingResult result = new ProcessingResult("Calculate names");
-        HashMap<String, String> namesMap = new HashMap<>();
+    private static FileNamingStrategy createDefaultStrategy() {
+        return metadata -> {
+            if (metadata.getDateTime() == null) {
+                throw new DateTimeException("No DateTime in metadata");
+            }
+//            if (metadata.getCameraModel() == null) {
+//                throw new CameraModelException("No Camera model in metadata");
+//            }
 
-        for (String imageName : imageNames) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)");
+            return String.format("%s-%s.%s",
+                    // metadata.getCameraModel(),
+                    formatter.format(metadata.getDateTime()),
+                    metadata.getMd5().substring(0, 6),
+                    metadata.getExtension().toUpperCase());
+        };
+    }
 
+
+    private void processImages(Path directoryPath, Collection<String> imageNames) throws IOException {
+        ProcessingResult result = new ProcessingResult("Image processing");
+        Map<String, String> renameMap = new LinkedHashMap<>();
+
+        imageNames.forEach(imageName -> {
             try {
-                Optional<String> newName = calculateNameForFile(directoryPath, imageName);
-                if (newName.isPresent()) {
-                    if (imageName.equals(newName.get())) {
-                        logger.info("✓ {}", imageName);
-                        result.incSkipped();
-                    } else {
-
-                        namesMap.put(imageName, newName.get());
-                        result.incProcessed();
-                    }
-
-                } else {
-                    logger.info("⚠ {}", imageName);
-                    result.incFailed();
-                }
-            } catch (java.io.FileNotFoundException e) {
-                result.incFailed();
-                logError("FileNotFoundException: " + imageName, e);
+                processSingleImage(directoryPath, imageName, renameMap, result);
             } catch (Exception e) {
                 result.incFailed();
-                // ⚠
-                logError("Failed processing of file " + imageName, e);
+                logger.error("[Failed] {} : {}", imageName, e.getMessage());
             }
-        }
-        logger.info(result.toString());
+        });
 
-        if (namesMap.isEmpty()) {
-            logger.info("No files need renaming");
+        logger.info(result.toString());
+        executeRenaming(directoryPath, renameMap);
+    }
+
+    private void executeRenaming(Path directoryPath, Map<String, String> renameMap) {
+        if (renameMap.isEmpty()) {
+            logger.info("Nothing to rename");
             return;
         }
 
         logger.info("Files to rename:");
-        namesMap.forEach((oldName, newName) -> logger.info("{} → {}", oldName, newName));
+        renameMap.forEach((oldName, newName) -> logger.info("{} → {}", oldName, newName));
 
-        if (confirmOperation("Confirm rename?")) {
-            renameFilesInDirectory(directoryPath, namesMap);
-        } else {
-            logger.info("Operation canceled by user.");
+        if (!confirmOperation("Confirm rename?")) {
+            logger.info("Operation canceled");
+            return;
         }
-    }
 
-    private void renameFilesInDirectory(Path directoryPath, HashMap<String, String> namesMap) {
-        ProcessingResult result = new ProcessingResult("Rename files");
-        for (String name : namesMap.keySet()) {
+        ProcessingResult result = new ProcessingResult("File renaming");
+        renameMap.forEach((oldName, newName) -> {
             try {
-                Path curPath = directoryPath.resolve(name);
-                Path newPath = directoryPath.resolve(namesMap.get(name));
-                boolean ok = FileUtils.safeMove(curPath, newPath);
-                if (ok)
-                    result.incProcessed();
-                else
-                    result.incSkipped();
-            } catch (NoSuchFileException e) {
-                result.incFailed();
-                logError("No such file", e);
+                FileUtils.safeMove(directoryPath.resolve(oldName), directoryPath.resolve(newName));
+                result.incProcessed();
             } catch (IOException e) {
                 result.incFailed();
-                logError(e.getMessage(), e);
+                logger.error("[Failed]: {} -> {}", oldName, newName);
             }
-        }
+        });
 
         logger.info(result.toString());
     }
 
 
-    private Optional<String> calculateNameForFile(Path directoryPath, String imageName)
-            throws IOException, ImageProcessingException {
+    private void processSingleImage(Path directoryPath, String imageName,
+                                    Map<String, String> renameMap, ProcessingResult result)
+            throws IOException, ImageProcessingException, CameraModelException, DateTimeException {
 
         Path imagePath = directoryPath.resolve(imageName);
 
@@ -154,29 +131,32 @@ public class FileRenamer extends FileProcessor {
         // ExifReader.printAllTags(imagePath.toFile());
 
         FileMetadata metadata = extractFileInfo(imagePath);
-        String newName;
-        try {
-            newName = strategy.generateName(metadata);
-        }
-        catch (DateTimeException e) {
-            logError("DateTimeException of " + imageName, e);
-            return Optional.empty();
-        } catch (CameraModelException e) {
-            logError("CameraModelException of " + imageName, e);
-            return Optional.empty();
-        }
+        String newName = strategy.generateName(metadata);
+        newName = validatePath(newName);
 
-        return Optional.of(newName);
+        if (!imageName.equals(newName)) {
+            logger.info("{} -> {}", imageName, newName);
+            renameMap.put(imageName, newName);
+            result.incProcessed();
+        } else {
+            logger.info("skip {}", imageName);
+            result.incSkipped();
+        }
+    }
+
+    public static String validatePath(String path) {
+        if (path == null || path.isBlank()) {
+            throw new IllegalArgumentException("Path cannot be null or empty");
+        }
+        return path.startsWith("/") ? path.substring(1) : path;
     }
 
     private FileMetadata extractFileInfo(Path filePath) throws IOException {
         File file = filePath.toFile();
-
-        FileMetadata metadata = new FileMetadata();
-        metadata.setMd5(MD5Reader.getMD5(file));
-        metadata.setExtension(FileUtils.ExtensionUtils.getExtension(filePath.getFileName().toString()));
-        metadata.setCameraModel(ExifReader.getCameraModel(file).orElse("none"));
-        dateTimeReader.getDateTime(file).ifPresent(metadata::setDateTime);
-        return metadata;
+        return new FileMetadata()
+                .setMd5(MD5Reader.getMD5(file))
+                .setExtension(FileUtils.ExtensionUtils.getExtension(filePath.getFileName().toString()))
+                .setCameraModel(ExifReader.getCameraModel(file).orElse(null))
+                .setDateTime(dateTimeReader.getDateTime(file).orElse(null));
     }
 }

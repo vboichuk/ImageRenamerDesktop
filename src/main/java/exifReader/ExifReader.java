@@ -12,6 +12,7 @@ import exception.NoExifDataException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.NoSuchFileException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
@@ -32,7 +33,7 @@ public class ExifReader {
                             .atZone(ZoneId.of("UTC"))
                             .toLocalDateTime());
         } catch (NoExifDataException | ImageProcessingException | IOException ex) {
-            System.out.println("Failed to get exif from " + imageFile.getName());
+            System.out.println("Error: " + ex.getMessage() + " - " + imageFile.getName());
             return Optional.empty();
         }
     }
@@ -73,9 +74,12 @@ public class ExifReader {
 
     protected static Metadata getMetadata(File imageFile)
             throws NoExifDataException, ImageProcessingException, IOException {
-        if (imageFile == null || !imageFile.exists() || !imageFile.isFile()) {
-            throw new NoExifDataException();
-        }
+        if (imageFile == null)
+            throw new RuntimeException("");
+
+        if (!imageFile.exists() || !imageFile.isFile())
+            throw new NoSuchFileException(imageFile.getAbsolutePath());
+
         return ImageMetadataReader.readMetadata(imageFile);
     }
 }
