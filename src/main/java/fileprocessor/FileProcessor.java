@@ -26,7 +26,7 @@ public abstract class FileProcessor {
     protected Collection<String> getImageFiles(Path dirPath) throws IOException {
 
         long startTime = System.nanoTime();
-        Collection<String> images = FileUtils.ImageUtils.listImageFilesFast(dirPath);
+        Collection<String> images = FileUtils.ImageUtils.listJpgFiles(dirPath);
         logDuration("Getting images list", (System.nanoTime() - startTime) / 1_000_000L);
 
         if (images.isEmpty()) {

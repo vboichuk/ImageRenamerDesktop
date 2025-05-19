@@ -65,8 +65,7 @@ public final class FileUtils {
             return FileUtils.listFilesByExtension(dir, IMAGE_PATTERN);
         }
 
-        public static Collection<String> listImageFilesFast(Path dir) {
-            // jpg|jpeg|png|gif|bmp|webp
+        public static Collection<String> listJpgFiles(Path dir) {
 
             List<String> result = new ArrayList<>();
 
@@ -76,7 +75,7 @@ public final class FileUtils {
                 if (Files.isHidden(path))
                     return false;
                 String lowerName = path.getFileName().toString().toLowerCase();
-                return lowerName.endsWith("jpg") || lowerName.endsWith("jpeg") || lowerName.endsWith("png");
+                return lowerName.endsWith("jpg") || lowerName.endsWith("jpeg");
             };
 
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, filter)) {
