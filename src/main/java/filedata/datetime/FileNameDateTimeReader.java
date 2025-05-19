@@ -16,6 +16,9 @@ public class FileNameDateTimeReader implements DateTimeReader {
         }
 
         String filename = file.getName();
+        if (filename.length() < 18)
+            return Optional.empty();
+
         filename = filename.substring(0, 18);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)", Locale.getDefault());
         try {

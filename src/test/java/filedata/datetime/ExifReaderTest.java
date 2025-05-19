@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
 public class ExifReaderTest extends BaseDatetimeReaderTest {
 
     public ExifReaderTest() {
-        reader = new ExifReader();
+        reader = new DateTimeExifReader();
     }
 
     @Test

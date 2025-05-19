@@ -1,10 +1,12 @@
 package filerenamer;
 
-import fileprocessor.FileProcessor;
 import com.drew.imaging.ImageProcessingException;
+import exception.CameraModelException;
+import exifReader.ExifReader;
 import filedata.datetime.CompositeDateTimeReader;
 import filedata.md5.MD5Reader;
 import fileprocessor.FileMetadata;
+import fileprocessor.FileProcessor;
 import fileprocessor.ProcessingResult;
 import utils.FileUtils;
 
@@ -26,11 +28,19 @@ public class FileRenamer extends FileProcessor {
 
     public FileRenamer() {
         this(metadata -> {
+            if (metadata.getDateTime() == null)
+                throw new DateTimeException("");
+
+//            if (metadata.getCameraModel() == null)
+//                throw new CameraModelException("");
+
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)");
             String dateStr = formatter.format(metadata.getDateTime());
             String md5Prefix = metadata.getMd5().substring(0, 6);
+            String camera = metadata.getCameraModel();
 
             return String.format("%s-%s.%s",
+                    // camera,
                     dateStr,
                     md5Prefix,
                     metadata.getExtension().toUpperCase());
@@ -69,20 +79,27 @@ public class FileRenamer extends FileProcessor {
             try {
                 Optional<String> newName = calculateNameForFile(directoryPath, imageName);
                 if (newName.isPresent()) {
-                    namesMap.put(imageName, newName.get());
-                    result.incProcessed();
+                    if (imageName.equals(newName.get())) {
+                        logger.info("✓ {}", imageName);
+                        result.incSkipped();
+                    } else {
+
+                        namesMap.put(imageName, newName.get());
+                        result.incProcessed();
+                    }
+
+                } else {
+                    logger.info("⚠ {}", imageName);
+                    result.incFailed();
                 }
-                else {
-                    logger.debug("✓ {}", imageName);
-                    result.incSkipped();
-                }
+            } catch (java.io.FileNotFoundException e) {
+                result.incFailed();
+                logError("FileNotFoundException: " + imageName, e);
             } catch (Exception e) {
                 result.incFailed();
                 // ⚠
                 logError("Failed processing of file " + imageName, e);
             }
-
-
         }
         logger.info(result.toString());
 
@@ -134,15 +151,20 @@ public class FileRenamer extends FileProcessor {
             throw new ImageProcessingException("Not a regular file", null);
         }
 
+        // ExifReader.printAllTags(imagePath.toFile());
+
         FileMetadata metadata = extractFileInfo(imagePath);
-
-        String newName = strategy.generateName(metadata);
-        Path newPath = directoryPath.resolve(newName);
-
-        boolean namesMatch = imagePath.equals(newPath);
-
-        if (namesMatch)
+        String newName;
+        try {
+            newName = strategy.generateName(metadata);
+        }
+        catch (DateTimeException e) {
+            logError("DateTimeException of " + imageName, e);
             return Optional.empty();
+        } catch (CameraModelException e) {
+            logError("CameraModelException of " + imageName, e);
+            return Optional.empty();
+        }
 
         return Optional.of(newName);
     }
@@ -150,11 +172,11 @@ public class FileRenamer extends FileProcessor {
     private FileMetadata extractFileInfo(Path filePath) throws IOException {
         File file = filePath.toFile();
 
-        return new FileMetadata(
-                dateTimeReader.getDateTime(file).orElseThrow(() ->
-                        new DateTimeException("Date undefined")),
-                MD5Reader.getMD5(file),
-                FileUtils.ExtensionUtils.getExtension(filePath.getFileName().toString())
-        );
+        FileMetadata metadata = new FileMetadata();
+        metadata.setMd5(MD5Reader.getMD5(file));
+        metadata.setExtension(FileUtils.ExtensionUtils.getExtension(filePath.getFileName().toString()));
+        metadata.setCameraModel(ExifReader.getCameraModel(file).orElse("none"));
+        dateTimeReader.getDateTime(file).ifPresent(metadata::setDateTime);
+        return metadata;
     }
 }

@@ -12,7 +12,7 @@ public class CompositeDateTimeReader implements DateTimeReader {
 
     public CompositeDateTimeReader() {
         this.readers = List.of(
-                new ExifReader(),
+                new DateTimeExifReader(),
                 new FileNameDateTimeReader()
                 // new FileSystemDateTimeReader(ZoneId.of("UTC+3"))
         );
