@@ -149,7 +149,7 @@ public final class FileUtils {
 
     public static final class ExtensionUtils {
         /**
-         * Извлекает расширение файла в нижнем регистре
+         * Извлекает расширение файла
          *
          * @return расширение без точки или пустую строку
          */
@@ -160,7 +160,7 @@ public final class FileUtils {
             if (dotIndex < 0 || dotIndex == filename.length() - 1) {
                 return "";
             }
-            return filename.substring(dotIndex + 1).toLowerCase();
+            return filename.substring(dotIndex + 1);
         }
 
         /**

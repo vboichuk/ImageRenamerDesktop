@@ -23,10 +23,10 @@ import java.util.Map;
 public class FileRenamer extends FileProcessor {
 
     private final CompositeDateTimeReader dateTimeReader;
-    private final FileNamingStrategy strategy;
+    private FileNamingStrategy strategy;
 
     public FileRenamer() {
-        this(createDefaultStrategy());
+        this(new TemplateNamingStrategy("{date:yyyy.MM.dd}.JPG"));
     }
 
     public FileRenamer(FileNamingStrategy strategy) {
@@ -34,12 +34,14 @@ public class FileRenamer extends FileProcessor {
         this.strategy = strategy;
     }
 
-    public void rename(String directory) {
+    public void rename(String directory, String template) {
+
+        strategy = new TemplateNamingStrategy(template);
 
         try {
             Path dirPath = FileUtils.getDirectory(directory);
-
             logger.debug("Processing directory: {}", dirPath);
+            logger.debug("Template: {}", template);
 
             Collection<String> images = getImageFiles(dirPath);
             if (images.isEmpty()) {
@@ -51,26 +53,6 @@ public class FileRenamer extends FileProcessor {
             logError(e.getMessage(), e);
         }
     }
-
-
-    private static FileNamingStrategy createDefaultStrategy() {
-        return metadata -> {
-            if (metadata.getDateTime() == null) {
-                throw new DateTimeException("No DateTime in metadata");
-            }
-//            if (metadata.getCameraModel() == null) {
-//                throw new CameraModelException("No Camera model in metadata");
-//            }
-
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)");
-            return String.format("%s-%s.%s",
-                    // metadata.getCameraModel(),
-                    formatter.format(metadata.getDateTime()),
-                    metadata.getMd5().substring(0, 6),
-                    metadata.getExtension().toUpperCase());
-        };
-    }
-
 
     private void processImages(Path directoryPath, Collection<String> imageNames) throws IOException {
         ProcessingResult result = new ProcessingResult("Image processing");
@@ -95,7 +77,7 @@ public class FileRenamer extends FileProcessor {
             return;
         }
 
-        logger.info("Files to rename:");
+        logger.info("Files to rename ({}):", renameMap.size());
         renameMap.forEach((oldName, newName) -> logger.info("{} → {}", oldName, newName));
 
         if (!confirmOperation("Confirm rename?")) {
@@ -120,7 +102,7 @@ public class FileRenamer extends FileProcessor {
 
     private void processSingleImage(Path directoryPath, String imageName,
                                     Map<String, String> renameMap, ProcessingResult result)
-            throws IOException, ImageProcessingException, CameraModelException, DateTimeException {
+            throws IOException, ImageProcessingException, DateTimeException {
 
         Path imagePath = directoryPath.resolve(imageName);
 
@@ -143,6 +125,7 @@ public class FileRenamer extends FileProcessor {
             result.incSkipped();
         }
     }
+
 
     public static String validatePath(String path) {
         if (path == null || path.isBlank()) {
