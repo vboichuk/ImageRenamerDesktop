@@ -1,6 +1,6 @@
 package filedata.datetime;
 
-import exifReader.ExifReader;
+import exifreader.ExifReader;
 
 import java.io.File;
 import java.time.LocalDateTime;

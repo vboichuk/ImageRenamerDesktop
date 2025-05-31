@@ -4,9 +4,6 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /*
 Список проблем
 1. Если в файле нет никакой exif-информации - не удастся добавить DateTimeOriginal

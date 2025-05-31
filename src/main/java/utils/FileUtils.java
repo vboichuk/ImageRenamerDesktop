@@ -16,7 +16,9 @@ import java.util.stream.Stream;
 public final class FileUtils {
     private static Logger logger = LoggerFactory.getLogger(FileUtils.class);
 
-    private FileUtils() {} // Запрет создания экземпляров
+    // Запрет создания экземпляров
+    private FileUtils() {
+    }
 
     public static Path getDirectory(String path) {
         Path p = Paths.get(path).toAbsolutePath().normalize();

@@ -1,4 +1,4 @@
-package exifReader;
+package exifreader;
 
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;

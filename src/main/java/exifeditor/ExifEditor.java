@@ -1,4 +1,4 @@
-package exifEditor;
+package exifeditor;
 
 import exception.NoExifDataException;
 import org.apache.commons.imaging.ImageReadException;

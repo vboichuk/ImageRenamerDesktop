@@ -7,6 +7,7 @@ import java.security.NoSuchAlgorithmException;
 public class MD5Reader {
 
     private static final int BUFFER_SIZE = 8192;
+
     public static String getMD5(File file) throws IOException, SecurityException {
 
         validateFile(file);

@@ -88,7 +88,7 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
             // Попытка интерпретировать как число (первые N символов)
             int length = Integer.parseInt(format);
             return text.substring(0, Math.min(length, text.length()));
-        } catch (NumberFormatException ignored) {}
+        } catch (NumberFormatException ignored) { }
 
         return switch (format.toLowerCase()) {
             case "lower" -> text.toLowerCase();

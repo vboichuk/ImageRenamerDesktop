@@ -1,7 +1,7 @@
 package filerenamer;
 
 import com.drew.imaging.ImageProcessingException;
-import exifReader.ExifReader;
+import exifreader.ExifReader;
 import filedata.datetime.CompositeDateTimeReader;
 import filedata.md5.MD5Reader;
 import fileprocessor.FileMetadata;

@@ -1,7 +1,7 @@
 package fileprocessor;
 
 import exception.NoExifDataException;
-import exifEditor.ExifEditor;
+import exifeditor.ExifEditor;
 import utils.FileUtils;
 
 import java.io.IOException;
@@ -58,12 +58,10 @@ public class FileExifEditor extends FileProcessor {
                 ExifEditor.updateExifDateTimeOriginal(imagePath.toFile(), dateTime);
                 logger.info("{} → {}", imageName, dateTime);
                 result.incProcessed();
-            }
-            catch (NoExifDataException | DateTimeParseException e) {
+            } catch (NoExifDataException | DateTimeParseException e) {
                 result.incFailed();
                 logger.warn("⚠ {} : {}", imageName, e.getMessage());
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 result.incFailed();
                 logError("⚠ Failed processing of file " + imageName, e);
             }
