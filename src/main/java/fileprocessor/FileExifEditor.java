@@ -33,19 +33,27 @@ public class FileExifEditor extends FileProcessor {
     private void updateExifForFilesInDirectory(Path directoryPath, Collection<String> imageNames) {
         ProcessingResult result = new ProcessingResult("Update Exif");
 
+        Pattern pattern = Pattern.compile("(\\d{4}\\.\\d{2}\\.\\d{2}_\\(\\d{2}-\\d{2}\\))");
+
         for (String imageName : imageNames) {
             try {
                 Path imagePath = directoryPath.resolve(imageName);
 
-                Pattern pattern = Pattern.compile("(\\d{4}\\.\\d{2}\\.\\d{2}_\\(\\d{2}-\\d{2}\\))");
                 Matcher matcher = pattern.matcher(imageName);
-
                 if (!matcher.find()) {
                     throw new DateTimeParseException("DateTimeParseException", imageName, 1);
                 }
 
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd_(HH-mm)");
                 LocalDateTime dateTime = LocalDateTime.parse(matcher.group(1), formatter);
+
+
+                // Optional<LocalDateTime> dateTimeOptional = ExifReader.getDateTime(imagePath.toFile());
+                // if (dateTimeOptional.isEmpty()) {
+                //    throw new NoExifDataException();
+                // }
+                // LocalDateTime dateTime = dateTimeOptional.get();
+                 // dateTime = dateTime.plusHours(1);
 
                 ExifEditor.updateExifDateTimeOriginal(imagePath.toFile(), dateTime);
                 logger.info("{} → {}", imageName, dateTime);

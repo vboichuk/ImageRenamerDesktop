@@ -1,7 +1,6 @@
 package filerenamer;
 
 import com.drew.imaging.ImageProcessingException;
-import exception.CameraModelException;
 import exifReader.ExifReader;
 import filedata.datetime.CompositeDateTimeReader;
 import filedata.md5.MD5Reader;
@@ -15,7 +14,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.DateTimeException;
-import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;

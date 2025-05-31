@@ -11,6 +11,8 @@ import java.util.regex.Pattern;
 Список проблем
 1. Если в файле нет никакой exif-информации - не удастся добавить DateTimeOriginal
 2. Добавить возможность задавать формат имени с командной строки
+3. Добавить сортировку списка изображений
+4. Добавить паттерн "originalName"
  */
 
 @CommandLine.Command(
@@ -26,9 +28,10 @@ public class Main {
 
     @Option(names = {"-t", "--template"},
             description = "Naming pattern (e.g. \"{date:yyyyMMdd}_{model}.{ext}\")",
-            defaultValue = "{date:yyyy.MM.dd_HH-mm}-{md5}.{ext}"
+            defaultValue = "{date:yyyy.MM.dd}_({date:HH-mm})-{hash:6}.JPG"
+            // defaultValue = "{date:yyyy.MM.dd_HH-mm}-{hash}.{ext:upper}"
     )
-    // defaultValue = "{model}/{date:yyyy.MM.dd_HH-mm}-{md5}.{ext}"
+    // defaultValue = "{camera}/{date:yyyy.MM.dd_HH-mm}-{md5}.{ext}"
     private String template;
 
     public static void main(String[] args) {
@@ -37,20 +40,6 @@ public class Main {
 
     @Command(description = "Rename files in the specified directory")
     public int rename() {
-
-        String text = "{camera:jpg|default}, {camera:png}, {camera|backup}, {camera}";
-        Pattern pattern = Pattern.compile("\\{camera(:[^}|]+)?(\\|[^|}]+)?\\}");
-        Matcher matcher = pattern.matcher(text);
-
-        while (matcher.find()) {
-            System.out.println("groups:" + matcher.groupCount());
-            System.out.println("Full match: " + matcher.group(0));
-            System.out.println("format: " + matcher.group(1));
-            System.out.println("default: " + matcher.group(2));
-            System.out.println();
-        }
-//        if (true)
-//            return 0;
 
         try {
             new FileRenamer().rename(directory, template);

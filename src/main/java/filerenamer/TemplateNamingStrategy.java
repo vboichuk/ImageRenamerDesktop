@@ -9,10 +9,12 @@ import java.util.regex.Pattern;
 
 public class TemplateNamingStrategy implements FileNamingStrategy {
 
-    private static final Pattern dateTimePattern = Pattern.compile("\\{date(?::([^}]+))?\\}");
-    private static final Pattern cameraPattern = Pattern.compile("\\{camera(?::([^}|]+))?(?:\\|([^}]+))?\\}");
-    private static final Pattern md5Pattern = Pattern.compile("\\{hash(?::(\\d+))?(?:\\|([^}]+))?\\}");
-    private static final Pattern extPattern = Pattern.compile("\\{ext(?::([^}|]+))?(?:\\|([^}]+))?\\}");
+    private static final Pattern DATETIME_PATTERN = Pattern.compile("\\{date(?::([^}]+))?\\}");
+    private static final Pattern CAMERA_PATTERN = Pattern.compile("\\{camera(?::([^}|]+))?(?:\\|([^}]+))?\\}");
+    private static final Pattern MD5_PATTERN = Pattern.compile("\\{hash(?::(\\d+))?(?:\\|([^}]+))?\\}");
+    private static final Pattern EXT_PATTERN = Pattern.compile("\\{ext(?::([^}|]+))?(?:\\|([^}]+))?\\}");
+
+    private static final String DEFAULT_DATETIME_FORMAT = "yyyy.MM.dd_HH-mm";
 
     private final String template;
 
@@ -38,7 +40,7 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
 
 
     public String processDateTime(String text, FileMetadata metadata) {
-        Matcher matcher = dateTimePattern.matcher(text);
+        Matcher matcher = DATETIME_PATTERN.matcher(text);
         return matcher.replaceAll(match -> {
             String format = match.group(1);
             return formatDate(metadata.getDateTime(), format);
@@ -46,7 +48,7 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
     }
 
     protected String processCamera(String text, FileMetadata metadata) {
-        Matcher matcher = cameraPattern.matcher(text);
+        Matcher matcher = CAMERA_PATTERN.matcher(text);
         return matcher.replaceAll(match -> {
             String model = metadata.getCameraModel();
             return processPlaceholder(model, match.group(1), match.group(2));
@@ -54,7 +56,7 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
     }
 
     private String processHash(String text, FileMetadata metadata) {
-        Matcher matcher = md5Pattern.matcher(text);
+        Matcher matcher = MD5_PATTERN.matcher(text);
         return matcher.replaceAll(match -> {
             String hash = metadata.getMd5();
             return processPlaceholder(hash, match.group(1), match.group(2));
@@ -62,7 +64,7 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
     }
 
     private String processExtension(String text, FileMetadata metadata) {
-        Matcher matcher = extPattern.matcher(text);
+        Matcher matcher = EXT_PATTERN.matcher(text);
         return matcher.replaceAll(match -> {
             String ext = metadata.getExtension();
             return processPlaceholder(ext, match.group(1), match.group(2));
@@ -75,8 +77,7 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
         }
 
         if (format != null) {
-            // Обработка формата (первые N символов или регистр)
-            text = applyFormat(text, format);
+            return applyFormat(text, format);
         }
 
         return text;
@@ -97,7 +98,8 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
     }
 
     private String formatDate(LocalDateTime date, String pattern) {
-        if (date == null) return "nodate";
-        return DateTimeFormatter.ofPattern(pattern != null ? pattern : "yyyy.MM.dd_HH-mm").format(date);
+        if (date == null)
+            return "nodate";
+        return DateTimeFormatter.ofPattern(pattern != null ? pattern : DEFAULT_DATETIME_FORMAT).format(date);
     }
 }
