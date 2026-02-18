@@ -8,7 +8,7 @@ The application supports next placeholders in pattern:
 |------------|----------|---------|
 | `{original[:format]}` | Original file name | `IMG_1234` |
 | `{date[:pattern][\|default]}` | Date/time from EXIF | `2024.01.15_14-30` |
-| `{camera[:format][\|default]}` | Camera model | `Canon EOS 5D` |
+| `{camera[:format][\|default]}` | Camera model from EXIF | `Canon EOS 5D` |
 | `{hash[:format]}` | MD5 checksum of file | `e3b0c44298fc1c149afbf4c8996fb924` |
 | `{ext[:format]}` | File extension | `JPG` |
 
