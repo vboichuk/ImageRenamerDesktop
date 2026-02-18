@@ -28,7 +28,7 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
     private static final Pattern ORIGINAL_NAME_PATTERN = Pattern.compile("\\{original(?::([^}|]+))?\\}");
 
     private static final Pattern DATETIME_PATTERN = Pattern.compile("\\{date(?::([^}|]+))?(?:\\|([^|}]*))?\\}");
-    private static final Pattern CAMERA_PATTERN = Pattern.compile("\\{camera(?::([^}|]+))?(?:\\|([^}]+))?\\}");
+    private static final Pattern CAMERA_PATTERN = Pattern.compile("\\{camera(?::([^}|]+))?(?:\\|([^|}]*))?\\}");
 
     private static final Pattern MD5_PATTERN = Pattern.compile("\\{hash(?::(\\d+))?(?:\\|([^}]+))?\\}");
     private static final Pattern EXT_PATTERN = Pattern.compile("\\{ext(?::([^}|]+))?(?:\\|([^}]+))?\\}");
@@ -36,7 +36,10 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
     private static final String DEFAULT_DATETIME_FORMAT = "yyyy.MM.dd_HH-mm";
     private static final String LOWER_FORMAT = "lower";
     private static final String UPPER_FORMAT = "upper";
+
     private static final String NODATE = "nodate";
+    private static final String NOCAMERA = "undefined";
+
     private static final Logger log = LoggerFactory.getLogger(TemplateNamingStrategy.class);
 
     private final String template;
@@ -90,12 +93,12 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
         return Optional.empty();
     }
 
-    protected String processCamera(String text, FileMetadata metadata) {
+    protected static String processCamera(String text, FileMetadata metadata) {
         Matcher matcher = CAMERA_PATTERN.matcher(text);
         return matcher.replaceAll(match -> {
             String model = metadata.getCameraModel();
-            String format = match.group(1);
-            String defaultValue = match.group(2);
+            String format = extractGroup(match, 1).orElse("");
+            String defaultValue = extractGroup(match, 2).orElse(NOCAMERA);
             return processPlaceholder(model, format, defaultValue);
         });
     }
