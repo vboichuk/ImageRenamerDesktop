@@ -61,7 +61,7 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
         newName = processHash(newName, metadata);
         newName = processExtension(newName, metadata);
         newName = validateName(newName);
-        return newName;
+        return newName.trim();
     }
 
     public String processOriginalName(String text, FileMetadata metadata) {

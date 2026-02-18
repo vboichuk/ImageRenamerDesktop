@@ -1,15 +1,13 @@
 package utils;
 
+import exception.InvalidFileNameException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -145,6 +143,9 @@ public final class FileUtils {
     }
 
     public static final class PathUtils {
+
+        public static final Character[] INVALID_FILENAME_CHARS = {'\000', '\\', ':', '*', '?', '"', '<', '>', '|'};
+
         /**
          * Создает Path, добавляя к базовому пути компоненты
          */
@@ -165,6 +166,42 @@ public final class FileUtils {
 
         public static String getFilenameWithoutExt(String filename) {
             return filename.replaceFirst("\\.[^.]*$", "");
+        }
+
+        /**
+         * Валидирует имя файла
+         *
+         * @param filename имя файла для проверки
+         * @throws InvalidFileNameException если имя файла недопустимо
+         */
+        public static void validateFileName(String filename) throws InvalidFileNameException {
+            if (filename == null) {
+                throw new InvalidFileNameException("Filename cannot be null", null);
+            }
+
+            if (filename.trim().isEmpty()) {
+                throw new InvalidFileNameException("Filename cannot be empty or contain only whitespace", filename);
+            }
+
+            if (filename.length() > 255) {
+                throw new InvalidFileNameException(
+                        String.format("Filename exceeds maximum length of 255 characters (current: %d)", filename.length()),
+                        filename
+                );
+            }
+
+            if (!filename.equals(filename.trim())) {
+                throw new InvalidFileNameException("Filename cannot start or end with whitespace: \"" + filename + "\"", filename);
+            }
+
+            for (Character invalidChar : INVALID_FILENAME_CHARS) {
+                if (filename.contains(invalidChar.toString())) {
+                    throw new InvalidFileNameException(
+                            String.format("Filename contains invalid character: '%c' (ASCII: %d)", invalidChar, (int) invalidChar),
+                            filename
+                    );
+                }
+            }
         }
     }
 

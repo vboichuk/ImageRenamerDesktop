@@ -1,6 +1,7 @@
 package filerenamer;
 
 import com.drew.imaging.ImageProcessingException;
+import exception.InvalidFileNameException;
 import exifreader.ExifReader;
 import filedata.datetime.CompositeDateTimeReader;
 import filedata.md5.MD5Reader;
@@ -58,9 +59,15 @@ public class FileRenamer extends FileProcessor {
         imageNames.forEach(imageName -> {
             try {
                 processSingleImage(directoryPath, imageName, renameMap, result);
+            } catch (InvalidFileNameException e) {
+                result.incFailed();
+                logger.error("[Failed] Template generated invalid filename '{}' for '{}': {}",
+                        e.getFileName(),
+                        imageName,
+                        e.getMessage());
             } catch (Exception e) {
                 result.incFailed();
-                logger.error("[Failed] {} : {}", imageName, e.getMessage());
+                logger.error("[Failed] generate name for '{}': {}", imageName, e.getMessage());
             }
         });
 
@@ -99,7 +106,7 @@ public class FileRenamer extends FileProcessor {
 
     private void processSingleImage(Path directoryPath, String imageName,
                                     Map<String, String> renameMap, ProcessingResult result)
-            throws IOException, ImageProcessingException, DateTimeException {
+            throws IOException, ImageProcessingException, DateTimeException, InvalidFileNameException {
 
         Path imagePath = directoryPath.resolve(imageName);
 
@@ -107,11 +114,9 @@ public class FileRenamer extends FileProcessor {
             throw new ImageProcessingException("Not a regular file", null);
         }
 
-        // ExifReader.printAllTags(imagePath.toFile());
-
         FileMetadata metadata = extractFileInfo(imagePath);
         String newName = strategy.generateName(metadata);
-        newName = validatePath(newName);
+        FileUtils.PathUtils.validateFileName(newName);
 
         if (!imageName.equals(newName)) {
             logger.info("{} -> {}", imageName, newName);
@@ -121,14 +126,6 @@ public class FileRenamer extends FileProcessor {
             logger.info("skip {}", imageName);
             result.incSkipped();
         }
-    }
-
-
-    public static String validatePath(String path) {
-        if (path == null || path.isBlank()) {
-            throw new IllegalArgumentException("Path cannot be null or empty");
-        }
-        return path.startsWith("/") ? path.substring(1) : path;
     }
 
     private FileMetadata extractFileInfo(Path filePath) throws IOException {

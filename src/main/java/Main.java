@@ -22,7 +22,7 @@ public class Main {
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
     @SuppressWarnings("unused")
-    @Option(names = {"-d", "--directory"}, description = "Directory", defaultValue = ".")
+    @Option(names = {"-d", "--directory"}, description = "Directory. Current directory by default", defaultValue = ".")
     private String directory;
 
     @SuppressWarnings("unused")
