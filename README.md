@@ -20,9 +20,10 @@ For placeholders you can apply formats:
 
 ### default values
 
-For date and camera, you can specify a default value using |:
+For date and camera, you can specify a default value using `|`:
 
 `{date|nodate}` - if the date is not available (e.g., the file contains no EXIF data), "nodate" will be substituted
+
 `{camera|unknown}` - if the camera model is not available (e.g., the file contains no EXIF data), "unknown" will be substituted
 
 For example:
