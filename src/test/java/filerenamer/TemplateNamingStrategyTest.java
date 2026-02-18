@@ -22,6 +22,7 @@ public class TemplateNamingStrategyTest extends TestCase {
         assertEquals("TestImage-001", TemplateNamingStrategy.processOriginalName("{original:lowe10}", metadata));
         assertEquals("TestImage-001", TemplateNamingStrategy.processOriginalName("{original::}", metadata));
 
+        // default value for originalName is not supported
         assertEquals("{original:lower|default}", TemplateNamingStrategy.processOriginalName("{original:lower|default}", metadata));
 
         assertEquals("TestImage-001", TemplateNamingStrategy.processOriginalName("{original}", metadata));
@@ -76,5 +77,34 @@ public class TemplateNamingStrategyTest extends TestCase {
         assertEquals("{date:yyyyy|noexif1|noexif2}", TemplateNamingStrategy.processDateTime("{date:yyyyy|noexif1|noexif2}", metadata));
         assertEquals("{date|noexif1|noexif2}", TemplateNamingStrategy.processDateTime("{date|noexif1|noexif2}", metadata));
 
+    }
+
+    public void testProcessCamera() {
+        FileMetadata metadata = new FileMetadata();
+        metadata.setOriginalName("TestImage-001");
+        metadata.setExtension("jpg");
+        metadata.setCameraModel("Canon");
+
+        assertEquals("Canon", TemplateNamingStrategy.processCamera("{camera}", metadata));
+        assertEquals("Canon", TemplateNamingStrategy.processCamera("{camera:invalidformat}", metadata));
+        assertEquals("canon", TemplateNamingStrategy.processCamera("{camera:invalidformat:lower}", metadata));
+        assertEquals("can", TemplateNamingStrategy.processCamera("{camera:invalidformat:lower:3}", metadata));
+    }
+
+    public void testProcessCameraNoInfo() {
+        FileMetadata metadata = new FileMetadata();
+        metadata.setOriginalName("TestImage-001");
+        metadata.setExtension("jpg");
+        metadata.setCameraModel(null);
+
+        assertEquals("undefined", TemplateNamingStrategy.processCamera("{camera}", metadata));
+        assertEquals("undefined", TemplateNamingStrategy.processCamera("{camera:invalidformat}", metadata));
+        assertEquals("test", TemplateNamingStrategy.processCamera("{camera:lower|test}", metadata));
+        assertEquals("", TemplateNamingStrategy.processCamera("{camera|}", metadata));
+        assertEquals("test:2", TemplateNamingStrategy.processCamera("{camera|test:2}", metadata));
+
+        // invalid patterns - multiple default values
+        assertEquals("{camera:lower|test1|test2}", TemplateNamingStrategy.processCamera("{camera:lower|test1|test2}", metadata));
+        assertEquals("{camera:}", TemplateNamingStrategy.processCamera("{camera:}", metadata));
     }
 }
