@@ -18,20 +18,20 @@ import java.util.regex.Pattern;
  * - {original[:format]} - оригинальное имя файла
  * - {date[:pattern][|default]} - дата/время (pattern опционален)
  * - {camera[:format][|default]} - модель камеры
- * - {hash[:length][|default]} - MD5 хеш
- * - {ext[:format][|default]} - расширение файла
+ * - {hash[:format]} - MD5 хеш
+ * - {ext[:format]} - расширение файла
  * Форматы: length (первые N символов), lower, upper
  */
 
 public class TemplateNamingStrategy implements FileNamingStrategy {
 
     private static final Pattern ORIGINAL_NAME_PATTERN = Pattern.compile("\\{original(?::([^}|]+))?\\}");
+    private static final Pattern MD5_PATTERN = Pattern.compile("\\{hash(?::([^}|]+))?\\}");
 
     private static final Pattern DATETIME_PATTERN = Pattern.compile("\\{date(?::([^}|]+))?(?:\\|([^|}]*))?\\}");
     private static final Pattern CAMERA_PATTERN = Pattern.compile("\\{camera(?::([^}|]+))?(?:\\|([^|}]*))?\\}");
 
-    private static final Pattern MD5_PATTERN = Pattern.compile("\\{hash(?::(\\d+))?(?:\\|([^}]+))?\\}");
-    private static final Pattern EXT_PATTERN = Pattern.compile("\\{ext(?::([^}|]+))?(?:\\|([^}]+))?\\}");
+    private static final Pattern EXT_PATTERN = Pattern.compile("\\{ext(?::([^}|]+))?\\}");
 
     private static final String DEFAULT_DATETIME_FORMAT = "yyyy.MM.dd_HH-mm";
     private static final String LOWER_FORMAT = "lower";
@@ -42,9 +42,13 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
 
     private static final Logger log = LoggerFactory.getLogger(TemplateNamingStrategy.class);
 
+
     private final String template;
 
     public TemplateNamingStrategy(String template) {
+        if (template == null || template.isBlank()) {
+            throw new IllegalArgumentException("Template cannot be null or empty");
+        }
         this.template = template;
     }
 
@@ -60,7 +64,7 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
         return newName;
     }
 
-    public static String processOriginalName(String text, FileMetadata metadata) {
+    public String processOriginalName(String text, FileMetadata metadata) {
         Matcher matcher = ORIGINAL_NAME_PATTERN.matcher(text);
         return matcher.replaceAll(match -> {
              String originalName = metadata.getOriginalName();
@@ -69,31 +73,17 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
         });
     }
 
-    private String validateName(String newName) {
-        /// TODO: implement
-        return newName;
-    }
-
-
-    public static String processDateTime(String text, FileMetadata metadata) {
+    public String processDateTime(String text, FileMetadata metadata) {
         Matcher matcher = DATETIME_PATTERN.matcher(text);
         return matcher.replaceAll(match -> {
-            String format = extractGroup(matcher, 1).orElse(DEFAULT_DATETIME_FORMAT);
-            String defaultValue = extractGroup(matcher, 2).orElse(NODATE);
+            String format = extractGroup(match, 1).orElse(DEFAULT_DATETIME_FORMAT);
+            String defaultValue = extractGroup(match, 2).orElse(NODATE);
             // log.debug("{} -> format: '{}', default: '{}'", match.group(0), format, defaultValue);
             return formatDate(metadata.getDateTime(), format, defaultValue);
         });
     }
 
-    private static Optional<String> extractGroup(MatchResult match, int group) {
-        try {
-            return Optional.ofNullable(match.group(group));
-        } catch (IndexOutOfBoundsException ignored) {
-        }
-        return Optional.empty();
-    }
-
-    protected static String processCamera(String text, FileMetadata metadata) {
+    public String processCamera(String text, FileMetadata metadata) {
         Matcher matcher = CAMERA_PATTERN.matcher(text);
         return matcher.replaceAll(match -> {
             String model = metadata.getCameraModel();
@@ -103,25 +93,28 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
         });
     }
 
-    private String processHash(String text, FileMetadata metadata) {
+    public String processHash(String text, FileMetadata metadata) {
         Matcher matcher = MD5_PATTERN.matcher(text);
         return matcher.replaceAll(match -> {
             String hash = metadata.getMd5();
-            return processPlaceholder(hash, match.group(1), match.group(2));
+            String format = extractGroup(match, 1).orElse("");
+            return processPlaceholder(hash, format, "");
         });
     }
 
-    private String processExtension(String text, FileMetadata metadata) {
+    public String processExtension(String text, FileMetadata metadata) {
         Matcher matcher = EXT_PATTERN.matcher(text);
         return matcher.replaceAll(match -> {
             String ext = metadata.getExtension();
-            return processPlaceholder(ext, match.group(1), match.group(2));
+            String format = extractGroup(match, 1).orElse("");
+            return processPlaceholder(ext, format, "");
         });
     }
 
-    private static String processPlaceholder(String text, String format, String defaultValue) {
+
+    protected String processPlaceholder(String text, String format, @NotNull String defaultValue) {
         if (text == null || text.isBlank()) {
-            return defaultValue != null ? defaultValue : "";
+            return defaultValue;
         }
 
         if (format == null || format.isBlank())
@@ -133,6 +126,19 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
             result = applyFormat(result, s);
         }
         return result;
+    }
+
+    protected String validateName(String newName) {
+        /// TODO: implement
+        return newName;
+    }
+
+    protected static Optional<String> extractGroup(MatchResult match, int group) {
+        try {
+            return Optional.ofNullable(match.group(group));
+        } catch (IndexOutOfBoundsException ignored) {
+        }
+        return Optional.empty();
     }
 
     /**
@@ -165,7 +171,7 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
      * @see String#toLowerCase()
      * @see String#toUpperCase()
      */
-    private static String applyFormat(String text, String format) {
+    protected static String applyFormat(String text, String format) {
         if (format == null || text == null)
             return text;
         return switch (format.toLowerCase()) {
@@ -175,7 +181,7 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
         };
     }
 
-    private static String applyNumericFormat(@NotNull String text, @NotNull String format) {
+    protected static String applyNumericFormat(@NotNull String text, @NotNull String format) {
 
         try {
             // Попытка интерпретировать как число (первые N символов)
@@ -187,7 +193,7 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
         return text;
     }
 
-    private static String formatDate(LocalDateTime date, String pattern, String defaultValue) {
+    protected static String formatDate(LocalDateTime date, String pattern, String defaultValue) {
         if (date == null)
             return defaultValue;
         return DateTimeFormatter.ofPattern(pattern != null ? pattern : DEFAULT_DATETIME_FORMAT).format(date);
