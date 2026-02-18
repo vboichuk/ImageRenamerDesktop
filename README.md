@@ -1,37 +1,68 @@
 ## ImageRenamerDesktop
 
-Desktop Java-application for batch renaming images by user pattern.
+Desktop Java application for batch renaming images using user-defined patterns.
 
-The application supports next placeholders in pattern:
+
+### Placeholder
+
+The application supports the following placeholders in patterns:
 
 | Placeholder | Description | Example |
 |------------|----------|---------|
 | `{original[:format]}` | Original file name | `IMG_1234` |
-| `{date[:pattern][\|default]}` | Date/time from EXIF | `2024.01.15_14-30` |
+| `{date[:format][\|default]}` | Date/time from EXIF | `2024.01.15_14-30` |
 | `{camera[:format][\|default]}` | Camera model from EXIF | `Canon EOS 5D` |
-| `{hash[:format]}` | MD5 checksum of file | `e3b0c44298fc1c149afbf4c8996fb924` |
+| `{hash[:format]}` | MD5 checksum of the file | `e3b0c44298fc1c149afbf4c8996fb924` |
 | `{ext[:format]}` | File extension | `JPG` |
 
-For placeholders you can apply formats:
+
+### Formats
+
+**Supported formats for placeholders (except `date`):**
 - `:N` - first N characters (for example, `:10`)
 - `:lower` - lower case
 - `:upper` - upper case
 - `:lower:5` - format combination (first 5 characters in lower case)
 
+**Supported formats for the `date` placeholder:**
+- `yyyy` - year (e.g., 2026)
+- `M` - month (1-12)
+- `MM` - month (01-12)
+- `MMM` - month abbreviation (Jan-Dec)
+- `MMMM` - full month name (January-December)
+- `d` - day of month (1-31)
+- `dd` - day of month (01-31)
+- `hh` - hours (1-12)
+- `HH` - hours (0-23)
+- `mm` - minute (00-59)
+- `ss` - second (00-59)
 
-### default values
 
-For date and camera, you can specify a default value using `|`:
+### Default values
 
-`{date|nodate}` - if the date is not available (e.g., the file contains no EXIF data), "nodate" will be substituted
+For `date` and `camera`, you can specify a default value using `|`:
 
-`{camera|unknown}` - if the camera model is not available (e.g., the file contains no EXIF data), "unknown" will be substituted
+`{date|nodate}` - if the date is not available (e.g., the file contains no EXIF data), "_nodate_" will be substituted
 
-For example:
+`{camera|unknown}` - if the camera model is not available (e.g., the file contains no EXIF data), "_unknown_" will be substituted
 
-Pattern `{date:yyyy.MM.dd}-{hash:6}.{ext:upper}` will make filename like
 
-`2024.01.15-e3b0c4.JPG`
+### Workflow Process
+
+1. Scanning - searches for all JPG files in the specified directory
+
+2. Metadata Extraction - for each file, the following data is read:
+  - EXIF data (shooting date, camera model)
+  - MD5 hash
+  - Original name and extension
+
+4. Name Generation - applies the template to the metadata
+
+5. Preview - displays the list of changes
+
+6. Confirmation - requests confirmation before applying changes
+
+7. Renaming - safely renames the files
 
 
 ## Technologies
@@ -41,11 +72,11 @@ Pattern `{date:yyyy.MM.dd}-{hash:6}.{ext:upper}` will make filename like
 - **JUnit**
 - **Maven**
 
-### Build project
+### Building the Project
 
 **Maven:**
 ```bash
-git clone https://https://github.com/vboichuk/ImageRenamerDesktop.git
+git clone https://github.com/vboichuk/ImageRenamerDesktop.git
 cd ImageRenamerDesktop
 mvn clean package
 ```
@@ -55,7 +86,6 @@ mvn clean package
 ```bash
 java -jar target/FileRenamerDesktop-1.0-SNAPSHOT-jar-with-dependencies.jar [-hV] [-d=<directory>] [-t=<template>] [COMMAND]
 ```
-
 
 ```bash
 Help:
