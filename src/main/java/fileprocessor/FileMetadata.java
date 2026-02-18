@@ -7,6 +7,7 @@ public class FileMetadata {
     private String md5;
     private String extension;
     private String cameraModel;
+    private String originalName;
 
     public FileMetadata(LocalDateTime dateTime, String md5, String extension) {
         this.dateTime = dateTime;
@@ -16,6 +17,11 @@ public class FileMetadata {
 
     public FileMetadata() {
 
+    }
+
+
+    public String getOriginalName() {
+        return originalName;
     }
 
     public LocalDateTime getDateTime() {
@@ -32,6 +38,12 @@ public class FileMetadata {
 
     public String getCameraModel() {
         return cameraModel;
+    }
+
+
+    public FileMetadata setOriginalName(String originalName) {
+        this.originalName = originalName;
+        return this;
     }
 
     public FileMetadata setCameraModel(String cameraModel) {

@@ -1,34 +1,35 @@
 import fileprocessor.FileExifEditor;
 import filerenamer.FileRenamer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 /*
-Список проблем
+Список задач
 1. Если в файле нет никакой exif-информации - не удастся добавить DateTimeOriginal
 2. Добавить возможность задавать формат имени с командной строки
 3. Добавить сортировку списка изображений
-4. Добавить паттерн "originalName"
  */
 
 @CommandLine.Command(
         name = "FileRenamerDesktop",
         mixinStandardHelpOptions = true,
         version = "1.1",
-        description = "Tool for renaming files and editing EXIF data"
+        description = "Tool for renaming images and editing EXIF data"
 )
 public class Main {
+
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Option(names = {"-d", "--directory"}, description = "Directory", defaultValue = ".")
     private String directory;
 
     @Option(names = {"-t", "--template"},
             description = "Naming pattern (e.g. \"{date:yyyyMMdd}_{model}.{ext}\")",
-            defaultValue = "{date:yyyy.MM.dd}_({date:HH-mm})-{hash:6}.JPG"
-            // defaultValue = "{date:yyyy.MM.dd_HH-mm}-{hash}.{ext:upper}"
+            defaultValue = "{date:yyyy.MM.dd}_({date:HH-mm})-{hash:6}.{ext:upper}"
     )
-    // defaultValue = "{camera}/{date:yyyy.MM.dd_HH-mm}-{md5}.{ext}"
     private String template;
 
     public static void main(String[] args) {
@@ -42,7 +43,7 @@ public class Main {
             new FileRenamer().rename(directory, template);
             return 0;
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
+            logger.error("Error: {}", e.getMessage(), e);
             return 1;
         }
     }
@@ -53,7 +54,7 @@ public class Main {
             new FileExifEditor().editExif(directory);
             return 0;
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
+            logger.error("Error: {}", e.getMessage(), e);
             return 1;
         }
     }

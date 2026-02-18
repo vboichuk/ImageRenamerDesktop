@@ -16,7 +16,6 @@ import java.util.stream.Stream;
 public final class FileUtils {
     private static Logger logger = LoggerFactory.getLogger(FileUtils.class);
 
-    // Запрет создания экземпляров
     private FileUtils() {
     }
 
@@ -45,13 +44,29 @@ public final class FileUtils {
         }
     }
 
-    // REPLACE_EXISTING
+    /**
+     * Безопасно перемещает или переименовывает файл.
+     * Создаёт родительскую директорию для целевого файла, если она не существует.
+     * Перемещает файл с перезаписью существующего целевого файла
+     * @param source путь к исходному файлу, который нужно переместить (должен существовать)
+     * @param target путь к целевому файлу
+     * @return {@code true} если файл был успешно перемещён;
+     *         {@code false} если source и target указывают на один и тот же файл
+     * @throws IOException если произошла ошибка ввода-вывода:
+     *                     <ul>
+     *                       <li>исходный файл не существует</li>
+     *                       <li>не удалось создать родительскую директорию</li>
+     *                       <li>недостаточно прав доступа</li>
+     *                       <li>диск переполнен или другая системная ошибка</li>
+     *                     </ul>
+     * @throws NullPointerException если source или target равны {@code null}
+     * @throws SecurityException если менеджер безопасности запрещает доступ к файлам
+     */
     public static boolean safeMove(Path source, Path target) throws IOException {
         if (source.equals(target))
             return false;
 
         File parentDir = target.toAbsolutePath().getParent().toFile();
-        // logger.debug("parent: {}", parentDir.getName());
         if (!parentDir.exists()) {
             parentDir.mkdir();
         }
@@ -147,6 +162,10 @@ public final class FileUtils {
         public static String normalizePath(String path) {
             return Paths.get(path).normalize().toString();
         }
+
+        public static String getFilenameWithoutExt(String filename) {
+            return filename.replaceFirst("\\.[^.]*$", "");
+        }
     }
 
     public static final class ExtensionUtils {
@@ -156,7 +175,8 @@ public final class FileUtils {
          * @return расширение без точки или пустую строку
          */
         public static String getExtension(String filename) {
-            if (filename == null) return "";
+            if (filename == null)
+                return "";
 
             int dotIndex = filename.lastIndexOf('.');
             if (dotIndex < 0 || dotIndex == filename.length() - 1) {
@@ -169,8 +189,7 @@ public final class FileUtils {
          * Изменяет расширение файла
          */
         public static String changeExtension(String filename, String newExtension) {
-            String withoutExt = filename.replaceFirst("\\.[^.]*$", "");
-            return withoutExt + "." + newExtension;
+            return PathUtils.getFilenameWithoutExt(filename) + "." + newExtension;
         }
     }
 

@@ -33,8 +33,7 @@ public class FileRenamer extends FileProcessor {
     }
 
     public void rename(String directory, String template) {
-
-        strategy = new TemplateNamingStrategy(template);
+        this.strategy = new TemplateNamingStrategy(template);
 
         try {
             Path dirPath = FileUtils.getDirectory(directory);
@@ -136,6 +135,7 @@ public class FileRenamer extends FileProcessor {
         File file = filePath.toFile();
         return new FileMetadata()
                 .setMd5(MD5Reader.getMD5(file))
+                .setOriginalName(FileUtils.PathUtils.getFilenameWithoutExt(filePath.getFileName().toString()))
                 .setExtension(FileUtils.ExtensionUtils.getExtension(filePath.getFileName().toString()))
                 .setCameraModel(ExifReader.getCameraModel(file).orElse(null))
                 .setDateTime(dateTimeReader.getDateTime(file).orElse(null));
