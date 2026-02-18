@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
+import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,8 +26,10 @@ import java.util.regex.Pattern;
 public class TemplateNamingStrategy implements FileNamingStrategy {
 
     private static final Pattern ORIGINAL_NAME_PATTERN = Pattern.compile("\\{original(?::([^}|]+))?\\}");
-    private static final Pattern DATETIME_PATTERN = Pattern.compile("\\{date(?::([^}]+))?\\}");
+
+    private static final Pattern DATETIME_PATTERN = Pattern.compile("\\{date(?::([^}|]+))?(?:\\|([^|}]*))?\\}");
     private static final Pattern CAMERA_PATTERN = Pattern.compile("\\{camera(?::([^}|]+))?(?:\\|([^}]+))?\\}");
+
     private static final Pattern MD5_PATTERN = Pattern.compile("\\{hash(?::(\\d+))?(?:\\|([^}]+))?\\}");
     private static final Pattern EXT_PATTERN = Pattern.compile("\\{ext(?::([^}|]+))?(?:\\|([^}]+))?\\}");
 
@@ -57,7 +61,7 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
         Matcher matcher = ORIGINAL_NAME_PATTERN.matcher(text);
         return matcher.replaceAll(match -> {
              String originalName = metadata.getOriginalName();
-             String format = match.group(1);
+             String format = extractGroup(match, 1).orElse("");
              return processPlaceholder(originalName, format, "");
         });
     }
@@ -68,12 +72,22 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
     }
 
 
-    public String processDateTime(String text, FileMetadata metadata) {
+    public static String processDateTime(String text, FileMetadata metadata) {
         Matcher matcher = DATETIME_PATTERN.matcher(text);
         return matcher.replaceAll(match -> {
-            String format = match.group(1);
-            return formatDate(metadata.getDateTime(), format);
+            String format = extractGroup(matcher, 1).orElse(DEFAULT_DATETIME_FORMAT);
+            String defaultValue = extractGroup(matcher, 2).orElse(NODATE);
+            // log.debug("{} -> format: '{}', default: '{}'", match.group(0), format, defaultValue);
+            return formatDate(metadata.getDateTime(), format, defaultValue);
         });
+    }
+
+    private static Optional<String> extractGroup(MatchResult match, int group) {
+        try {
+            return Optional.ofNullable(match.group(group));
+        } catch (IndexOutOfBoundsException ignored) {
+        }
+        return Optional.empty();
     }
 
     protected String processCamera(String text, FileMetadata metadata) {
@@ -170,9 +184,9 @@ public class TemplateNamingStrategy implements FileNamingStrategy {
         return text;
     }
 
-    private String formatDate(LocalDateTime date, String pattern) {
+    private static String formatDate(LocalDateTime date, String pattern, String defaultValue) {
         if (date == null)
-            return NODATE;
+            return defaultValue;
         return DateTimeFormatter.ofPattern(pattern != null ? pattern : DEFAULT_DATETIME_FORMAT).format(date);
     }
 }
