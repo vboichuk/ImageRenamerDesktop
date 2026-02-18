@@ -8,24 +8,24 @@ import picocli.CommandLine.Option;
 
 /*
 Список задач
-1. Если в файле нет никакой exif-информации - не удастся добавить DateTimeOriginal
-2. Добавить возможность задавать формат имени с командной строки
-3. Добавить сортировку списка изображений
- */
+1. Добавить сортировку списка изображений
+*/
 
 @CommandLine.Command(
         name = "FileRenamerDesktop",
         mixinStandardHelpOptions = true,
-        version = "1.1",
+        version = "1.2",
         description = "Tool for renaming images and editing EXIF data"
 )
 public class Main {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
+    @SuppressWarnings("unused")
     @Option(names = {"-d", "--directory"}, description = "Directory", defaultValue = ".")
     private String directory;
 
+    @SuppressWarnings("unused")
     @Option(names = {"-t", "--template"},
             description = "Naming pattern (e.g. \"{date:yyyyMMdd}_{model}.{ext}\")",
             defaultValue = "{date:yyyy.MM.dd}_({date:HH-mm})-{hash:6}.{ext:upper}"
@@ -36,6 +36,7 @@ public class Main {
         new CommandLine(new Main()).execute(args);
     }
 
+    @SuppressWarnings("unused")
     @Command(description = "Rename files in the specified directory")
     public int rename() {
 
@@ -48,6 +49,7 @@ public class Main {
         }
     }
 
+    @SuppressWarnings("unused")
     @Command(description = "Edit EXIF data of files in the specified directory")
     public int editexif() {
         try {
