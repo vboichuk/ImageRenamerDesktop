@@ -9,16 +9,9 @@ public class FileMetadata {
     private String cameraModel;
     private String originalName;
 
-    public FileMetadata(LocalDateTime dateTime, String md5, String extension) {
-        this.dateTime = dateTime;
-        this.md5 = md5;
-        this.extension = extension;
-    }
-
     public FileMetadata() {
 
     }
-
 
     public String getOriginalName() {
         return originalName;
