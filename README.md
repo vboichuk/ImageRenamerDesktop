@@ -18,6 +18,7 @@ For placeholders you can apply formats:
 - `:upper` - upper case
 - `:lower:5` - format combination (first 5 characters in lower case)
 
+
 ### default values
 
 For date and camera, you can specify a default value using `|`:
@@ -27,8 +28,11 @@ For date and camera, you can specify a default value using `|`:
 `{camera|unknown}` - if the camera model is not available (e.g., the file contains no EXIF data), "unknown" will be substituted
 
 For example:
-Pattern `{date:yyyy.MM.dd}-{hash:6}.{ext:upper}` will make filename 
+
+Pattern `{date:yyyy.MM.dd}-{hash:6}.{ext:upper}` will make filename like
+
 `2024.01.15-e3b0c4.JPG`
+
 
 ## Technologies
 
