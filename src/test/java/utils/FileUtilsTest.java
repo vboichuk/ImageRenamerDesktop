@@ -2,13 +2,9 @@ package utils;
 
 import junit.framework.TestCase;
 
+import java.nio.file.Paths;
+
 public class FileUtilsTest extends TestCase {
-
-    public void testBuildPath() {
-    }
-
-    public void testNormalizePath() {
-    }
 
     public void testGetFilenameWithoutExt() {
         // assertEquals("", FileUtils.PathUtils.getFilenameWithoutExt("folder.txt/awesome"));
@@ -18,5 +14,8 @@ public class FileUtilsTest extends TestCase {
         assertEquals("document", FileUtils.PathUtils.getFilenameWithoutExt("document.txt"));
         assertEquals("document.awesome", FileUtils.PathUtils.getFilenameWithoutExt("document.awesome.txt"));
         assertEquals("document.awesome.txt", FileUtils.PathUtils.getFilenameWithoutExt("document.awesome.txt."));
+    }
+
+    public void testGetDirectory() {
     }
 }

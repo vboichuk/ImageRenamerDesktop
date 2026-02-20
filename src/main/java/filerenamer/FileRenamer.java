@@ -133,7 +133,7 @@ public class FileRenamer extends FileProcessor {
         return new FileMetadata()
                 .setMd5(MD5Reader.getMD5(file))
                 .setOriginalName(FileUtils.PathUtils.getFilenameWithoutExt(filePath.getFileName().toString()))
-                .setExtension(FileUtils.ExtensionUtils.getExtension(filePath.getFileName().toString()))
+                .setExtension(FileUtils.PathUtils.getExtension(filePath.getFileName().toString()))
                 .setCameraModel(ExifReader.getCameraModel(file).orElse(null))
                 .setDateTime(dateTimeReader.getDateTime(file).orElse(null));
     }
