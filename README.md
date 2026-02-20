@@ -1,6 +1,6 @@
 ## ImageRenamerDesktop
 
-Desktop Java application for batch renaming images using user-defined patterns.
+Java command-line tool for batch renaming images using user-defined patterns.
 
 
 ### Placeholder
